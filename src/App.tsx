@@ -1739,7 +1739,9 @@ export default function App() {
                               </div>
                             ) : (
                               <div className="bg-red-50 text-red-700 p-3 rounded text-xs border border-red-100 font-sans">
-                                {speechResponse.error}
+                                {typeof speechResponse.error === 'object' 
+                                  ? speechResponse.error.message || JSON.stringify(speechResponse.error) 
+                                  : speechResponse.error}
                               </div>
                             )}
                           </div>
@@ -1928,7 +1930,11 @@ export default function App() {
                                   </div>
                                 </div>
                               ) : transResponse.error ? (
-                                <p className="text-red-700 text-xs">{transResponse.error}</p>
+                                <p className="text-red-700 text-xs">
+                                  {typeof transResponse.error === 'object' 
+                                    ? transResponse.error.message || JSON.stringify(transResponse.error) 
+                                    : transResponse.error}
+                                </p>
                               ) : (
                                 <p className="text-gray-400 italic text-xs">Audio parsed successfully, but returned an empty transcript string.</p>
                               )}
@@ -2070,7 +2076,11 @@ export default function App() {
                                   </div>
                                 </div>
                               ) : imagesResponse.error ? (
-                                <p className="text-red-700 text-xs">{imagesResponse.error}</p>
+                                <p className="text-red-700 text-xs">
+                                  {typeof imagesResponse.error === 'object' 
+                                    ? imagesResponse.error.message || JSON.stringify(imagesResponse.error) 
+                                    : imagesResponse.error}
+                                </p>
                               ) : (
                                 <p className="text-gray-400 italic text-xs">Image parsed successfully, but returned an empty dataset.</p>
                               )}
