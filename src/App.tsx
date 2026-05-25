@@ -82,7 +82,7 @@ export default function App() {
   const [chatTryItOut, setChatTryItOut] = useState(false);
   const [chatInput, setChatInput] = useState("Kamusta ka companion? Kwentuhan mo naman ako tungkol sa Belgian history o kaya eburon AI.");
   const [chatTemperature, setChatTemperature] = useState(0.7);
-  const [chatModel, setChatModel] = useState("eburon-voice-v1");
+  const [chatModel, setChatModel] = useState("pluto-1.0");
   const [chatExecuting, setChatExecuting] = useState(false);
   const [chatResponse, setChatResponse] = useState<any | null>(null);
   const [chatCurl, setChatCurl] = useState<string>('');
@@ -126,6 +126,112 @@ export default function App() {
   const [imagesCurl, setImagesCurl] = useState<string>('');
   const [imagesReqUrl, setImagesReqUrl] = useState<string>('');
   const [imagesHeaders, setImagesHeaders] = useState<string>('');
+
+  // Endpoint 7: GET /v1/languages
+  const [langExpanded, setLangExpanded] = useState(false);
+  const [langTryItOut, setLangTryItOut] = useState(false);
+  const [langExecuting, setLangExecuting] = useState(false);
+  const [langResponse, setLangResponse] = useState<any | null>(null);
+  const [langCurl, setLangCurl] = useState<string>('');
+  const [langReqUrl, setLangReqUrl] = useState<string>('');
+  const [langHeaders, setLangHeaders] = useState<string>('');
+
+  // Endpoint 8: GET /v1/voices
+  const [voicesExpanded, setVoicesExpanded] = useState(false);
+  const [voicesTryItOut, setVoicesTryItOut] = useState(false);
+  const [voicesExecuting, setVoicesExecuting] = useState(false);
+  const [voicesResponse, setVoicesResponse] = useState<any | null>(null);
+  const [voicesCurl, setVoicesCurl] = useState<string>('');
+  const [voicesReqUrl, setVoicesReqUrl] = useState<string>('');
+  const [voicesHeaders, setVoicesHeaders] = useState<string>('');
+
+  // Endpoint 9: POST /v1/video/screenshare
+  const [shareExpanded, setShareExpanded] = useState(false);
+  const [shareTryItOut, setShareTryItOut] = useState(false);
+  const [shareExecuting, setShareExecuting] = useState(false);
+  const [shareResponse, setShareResponse] = useState<any | null>(null);
+  const [shareCurl, setShareCurl] = useState<string>('');
+  const [shareReqUrl, setShareReqUrl] = useState<string>('');
+  const [shareHeaders, setShareHeaders] = useState<string>('');
+
+  // Endpoint 10: POST /v1/functions/execute
+  const [funcExecExpanded, setFuncExecExpanded] = useState(false);
+  const [funcExecTryItOut, setFuncExecTryItOut] = useState(false);
+  const [funcExecExecuting, setFuncExecExecuting] = useState(false);
+  const [funcExecResponse, setFuncExecResponse] = useState<any | null>(null);
+  const [funcExecCurl, setFuncExecCurl] = useState<string>('');
+  const [funcExecReqUrl, setFuncExecReqUrl] = useState<string>('');
+  const [funcExecHeaders, setFuncExecHeaders] = useState<string>('');
+  const [funcExecPayload, setFuncExecPayload] = useState('{\n  "function_name": "get_weather",\n  "arguments": {\n    "location": "Brussels, Belgium"\n  }\n}');
+
+  // Endpoint 11: POST /v1/functions/outputs
+  const [funcOutExpanded, setFuncOutExpanded] = useState(false);
+  const [funcOutTryItOut, setFuncOutTryItOut] = useState(false);
+  const [funcOutExecuting, setFuncOutExecuting] = useState(false);
+  const [funcOutResponse, setFuncOutResponse] = useState<any | null>(null);
+  const [funcOutCurl, setFuncOutCurl] = useState<string>('');
+  const [funcOutReqUrl, setFuncOutReqUrl] = useState<string>('');
+  const [funcOutHeaders, setFuncOutHeaders] = useState<string>('');
+  const [funcOutPayload, setFuncOutPayload] = useState('{\n  "tool_outputs": [\n    {\n      "tool_id": "call_123",\n      "output": "sunny"\n    }\n  ]\n}');
+
+  // Endpoint 12: POST /v1/emotions/synthesis
+  const [emoSynExpanded, setEmoSynExpanded] = useState(false);
+  const [emoSynTryItOut, setEmoSynTryItOut] = useState(false);
+  const [emoSynExecuting, setEmoSynExecuting] = useState(false);
+  const [emoSynResponse, setEmoSynResponse] = useState<any | null>(null);
+  const [emoSynCurl, setEmoSynCurl] = useState<string>('');
+  const [emoSynReqUrl, setEmoSynReqUrl] = useState<string>('');
+  const [emoSynHeaders, setEmoSynHeaders] = useState<string>('');
+  const [emoSynPayload, setEmoSynPayload] = useState('{\n  "text": "Oh my god... I can\'t believe it! This is absolutely incredible, thank you so much! *laughs softly* You have no idea what this means to me.",\n  "emotion": "overwhelming joy and gratitude",\n  "intensity": 1.0\n}');
+
+  // Endpoint 13: GET /v1/emotions/results
+  const [emoResExpanded, setEmoResExpanded] = useState(false);
+  const [emoResTryItOut, setEmoResTryItOut] = useState(false);
+  const [emoResExecuting, setEmoResExecuting] = useState(false);
+  const [emoResResponse, setEmoResResponse] = useState<any | null>(null);
+  const [emoResCurl, setEmoResCurl] = useState<string>('');
+  const [emoResReqUrl, setEmoResReqUrl] = useState<string>('');
+  const [emoResHeaders, setEmoResHeaders] = useState<string>('');
+
+  // Endpoint 14: POST /v1/audio/speech/stream
+  const [ttstreamExpanded, setTtstreamExpanded] = useState(false);
+  const [ttstreamTryItOut, setTtstreamTryItOut] = useState(false);
+  const [ttstreamExecuting, setTtstreamExecuting] = useState(false);
+  const [ttstreamResponse, setTtstreamResponse] = useState<string>('');
+  const [ttstreamCurl, setTtstreamCurl] = useState<string>('');
+  const [ttstreamReqUrl, setTtstreamReqUrl] = useState<string>('');
+  const [ttstreamHeaders, setTtstreamHeaders] = useState<string>('');
+  const [ttstreamPayload, setTtstreamPayload] = useState('{\n  "text": "Streaming live output instantly.",\n  "voice": "aoede"\n}');
+
+  // Endpoint 15: POST /v1/video/analysis/stream
+  const [vidAnExpanded, setVidAnExpanded] = useState(false);
+  const [vidAnTryItOut, setVidAnTryItOut] = useState(false);
+  const [vidAnExecuting, setVidAnExecuting] = useState(false);
+  const [vidAnResponse, setVidAnResponse] = useState<any[]>([]);
+  const [vidAnCurl, setVidAnCurl] = useState<string>('');
+  const [vidAnReqUrl, setVidAnReqUrl] = useState<string>('');
+
+  // Handle native browser speech synthesis preview 
+  const playSampleVoice = (voiceOpt: any) => {
+    if (window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+      const sentence = `Hello, I am ${voiceOpt.superhero_name}. ${voiceOpt.description}`;
+      const utterance = new SpeechSynthesisUtterance(sentence);
+      
+      if (voiceOpt.gender === 'male') {
+        utterance.pitch = 0.8;
+      } else if (voiceOpt.gender === 'female') {
+        utterance.pitch = 1.2;
+      } else {
+        utterance.pitch = 1.0;
+      }
+      
+      if (voiceOpt.tone.includes('fast')) utterance.rate = 1.2;
+      else if (voiceOpt.tone.includes('slow')) utterance.rate = 0.8;
+      
+      window.speechSynthesis.speak(utterance);
+    }
+  };
 
   // Audio Recording Refs for custom transcript playground
   const transMediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -420,6 +526,296 @@ export default function App() {
       setImagesHeaders('connection: error');
     } finally {
       setImagesExecuting(false);
+    }
+  };
+
+  // Execute GET /v1/languages
+  const executeLanguages = async () => {
+    setLangExecuting(true);
+    const targetUrl = `${selectedServer}/v1/languages`;
+    setLangReqUrl(targetUrl);
+    setLangCurl(`curl -X 'GET' \\\n  '${targetUrl}' \\\n  -H 'accept: application/json'`);
+
+    try {
+      const startTime = performance.now();
+      const res = await fetch('/v1/languages', {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' }
+      });
+      const endTime = performance.now();
+      setLangHeaders(`content-type: application/json; charset=utf-8\ndate: ${new Date().toUTCString()}\nserver: Express\ntime: ${(endTime - startTime).toFixed(1)}ms`);
+
+      const data = await res.json();
+      setLangResponse(data);
+      addLog('server', `Fetched ${data.count} supported languages successfully.`);
+    } catch (e: any) {
+      console.error(e);
+      setLangResponse({ error: e.message || 'Failed to fetch languages.' });
+      setLangHeaders('connection: error');
+    } finally {
+      setLangExecuting(false);
+    }
+  };
+
+  // Execute GET /v1/voices
+  const executeVoices = async () => {
+    setVoicesExecuting(true);
+    const targetUrl = `${selectedServer}/v1/voices`;
+    setVoicesReqUrl(targetUrl);
+    setVoicesCurl(`curl -X 'GET' \\\n  '${targetUrl}' \\\n  -H 'accept: application/json'`);
+
+    try {
+      const startTime = performance.now();
+      const res = await fetch('/v1/voices', {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' }
+      });
+      const endTime = performance.now();
+      setVoicesHeaders(`content-type: application/json; charset=utf-8\ndate: ${new Date().toUTCString()}\nserver: Express\ntime: ${(endTime - startTime).toFixed(1)}ms`);
+
+      const data = await res.json();
+      setVoicesResponse(data);
+      addLog('server', `Fetched superhero voice mapping configured available models.`);
+    } catch (e: any) {
+      console.error(e);
+      setVoicesResponse({ error: e.message || 'Failed to fetch voices.' });
+      setVoicesHeaders('connection: error');
+    } finally {
+      setVoicesExecuting(false);
+    }
+  };
+
+  // Execute POST /v1/video/screenshare
+  const executeScreenshare = async () => {
+    setShareExecuting(true);
+    const targetUrl = `${selectedServer}/v1/video/screenshare`;
+    setShareReqUrl(targetUrl);
+    setShareCurl(`curl -X 'POST' \\\n  '${targetUrl}' \\\n  -H 'accept: application/json' \\\n  -d '{}'`);
+
+    try {
+      const startTime = performance.now();
+      const res = await fetch('/v1/video/screenshare', {
+        method: 'POST',
+        headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+        body: JSON.stringify({})
+      });
+      const endTime = performance.now();
+      setShareHeaders(`content-type: application/json; charset=utf-8\ndate: ${new Date().toUTCString()}\nserver: Express\ntime: ${(endTime - startTime).toFixed(1)}ms`);
+
+      const data = await res.json();
+      setShareResponse(data);
+    } catch (e: any) {
+      console.error(e);
+      setShareResponse({ error: e.message || 'Failed to start screenshare.' });
+      setShareHeaders('connection: error');
+    } finally {
+      setShareExecuting(false);
+    }
+  };
+
+  // Execute POST /v1/functions/execute
+  const executeFuncExec = async () => {
+    setFuncExecExecuting(true);
+    const targetUrl = `${selectedServer}/v1/functions/execute`;
+    setFuncExecReqUrl(targetUrl);
+    setFuncExecCurl(`curl -X 'POST' \\\n  '${targetUrl}' \\\n  -H 'accept: application/json' \\\n  -H 'Content-Type: application/json' \\\n  -d '${funcExecPayload.replace(/'/g, "'\\''")}'`);
+
+    try {
+      const startTime = performance.now();
+      const res = await fetch('/v1/functions/execute', {
+        method: 'POST',
+        headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+        body: funcExecPayload
+      });
+      const endTime = performance.now();
+      setFuncExecHeaders(`content-type: application/json; charset=utf-8\ndate: ${new Date().toUTCString()}\nserver: Express\ntime: ${(endTime - startTime).toFixed(1)}ms`);
+
+      const data = await res.json();
+      setFuncExecResponse(data);
+    } catch (e: any) {
+      console.error(e);
+      setFuncExecResponse({ error: e.message || 'Failed to execute function.' });
+      setFuncExecHeaders('connection: error');
+    } finally {
+      setFuncExecExecuting(false);
+    }
+  };
+
+  // Execute POST /v1/functions/outputs
+  const executeFuncOut = async () => {
+    setFuncOutExecuting(true);
+    const targetUrl = `${selectedServer}/v1/functions/outputs`;
+    setFuncOutReqUrl(targetUrl);
+    setFuncOutCurl(`curl -X 'POST' \\\n  '${targetUrl}' \\\n  -H 'accept: application/json' \\\n  -H 'Content-Type: application/json' \\\n  -d '${funcOutPayload.replace(/'/g, "'\\''")}'`);
+
+    try {
+      const startTime = performance.now();
+      const res = await fetch('/v1/functions/outputs', {
+        method: 'POST',
+        headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+        body: funcOutPayload
+      });
+      const endTime = performance.now();
+      setFuncOutHeaders(`content-type: application/json; charset=utf-8\ndate: ${new Date().toUTCString()}\nserver: Express\ntime: ${(endTime - startTime).toFixed(1)}ms`);
+
+      const data = await res.json();
+      setFuncOutResponse(data);
+    } catch (e: any) {
+      console.error(e);
+      setFuncOutResponse({ error: e.message || 'Failed to submit output.' });
+      setFuncOutHeaders('connection: error');
+    } finally {
+      setFuncOutExecuting(false);
+    }
+  };
+
+  // Execute GET /v1/emotions/results
+  const executeEmoRes = async () => {
+    setEmoResExecuting(true);
+    const targetUrl = `${selectedServer}/v1/emotions/results`;
+    setEmoResReqUrl(targetUrl);
+    setEmoResCurl(`curl -X 'GET' \\\n  '${targetUrl}' \\\n  -H 'accept: application/json'`);
+
+    try {
+      const startTime = performance.now();
+      const res = await fetch('/v1/emotions/results', {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' }
+      });
+      const endTime = performance.now();
+      setEmoResHeaders(`content-type: application/json; charset=utf-8\ndate: ${new Date().toUTCString()}\nserver: Express\ntime: ${(endTime - startTime).toFixed(1)}ms`);
+
+      const data = await res.json();
+      setEmoResResponse(data);
+    } catch (e: any) {
+      console.error(e);
+      setEmoResResponse({ error: e.message || 'Failed to get emotion results.' });
+      setEmoResHeaders('connection: error');
+    } finally {
+      setEmoResExecuting(false);
+    }
+  };
+
+  // Execute POST /v1/audio/speech/stream
+  const executeTTStream = async () => {
+    setTtstreamExecuting(true);
+    const targetUrl = `${selectedServer}/v1/audio/speech/stream`;
+    setTtstreamReqUrl(targetUrl);
+    setTtstreamCurl(`curl -N -X 'POST' \\\n  '${targetUrl}' \\\n  -H 'accept: audio/mpeg' \\\n  -H 'Content-Type: application/json' \\\n  -d '${ttstreamPayload.replace(/'/g, "'\\''")}'`);
+
+    try {
+      const startTime = performance.now();
+      const res = await fetch('/v1/audio/speech/stream', {
+        method: 'POST',
+        headers: { 'Accept': 'audio/mpeg', 'Content-Type': 'application/json' },
+        body: ttstreamPayload
+      });
+      const endTime = performance.now();
+      setTtstreamHeaders(`content-type: audio/mpeg; charset=utf-8\ntransfer-encoding: chunked\ndate: ${new Date().toUTCString()}\nserver: Express\ntime: ${(endTime - startTime).toFixed(1)}ms`);
+
+      if (!res.body) throw new Error("No readable stream available.");
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder("utf-8");
+      setTtstreamResponse("");
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value, { stream: true });
+        setTtstreamResponse((prev) => prev + chunk);
+      }
+    } catch (e: any) {
+      console.error(e);
+      setTtstreamResponse('error: ' + (e.message || 'Stream failed.'));
+      setTtstreamHeaders('connection: error');
+    } finally {
+      setTtstreamExecuting(false);
+    }
+  };
+
+  // Execute POST /v1/video/analysis/stream
+  const executeVidAn = async () => {
+    setVidAnExecuting(true);
+    setVidAnResponse([]);
+    const targetUrl = `${selectedServer}/v1/video/analysis/stream`;
+    setVidAnReqUrl(targetUrl);
+    setVidAnCurl(`curl -N -X 'POST' \\\n  '${targetUrl}' \\\n  -H 'accept: text/event-stream'`);
+
+    try {
+      const res = await fetch('/v1/video/analysis/stream', {
+        method: 'POST',
+        headers: { 'Accept': 'text/event-stream' }
+      });
+      if (!res.body) throw new Error("No readable stream.");
+      
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder("utf-8");
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunkStr = decoder.decode(value, { stream: true });
+        
+        const events = chunkStr.split('\\n\\n');
+        for (const ev of events) {
+          if (ev.startsWith('data: ') && ev !== 'data: [DONE]') {
+            try {
+              const data = JSON.parse(ev.replace('data: ', ''));
+              setVidAnResponse(prev => [...prev, data]);
+              // Optionally play audio chunk if present
+              if (data.audio) {
+                const audioObj = new Audio('data:audio/mp3;base64,' + data.audio);
+                audioObj.play().catch(e => console.error("Could not play audio TTS chunk", e));
+              }
+            } catch (e) {
+              // ignore parse errors on chunks
+            }
+          }
+        }
+      }
+    } catch (e: any) {
+      console.error(e);
+      setVidAnResponse([{ error: e.message || 'Stream failed.' }]);
+    } finally {
+      setVidAnExecuting(false);
+    }
+  };
+
+  // Execute POST /v1/emotions/synthesis
+  const executeEmoSyn = async () => {
+    setEmoSynExecuting(true);
+    const targetUrl = `${selectedServer}/v1/emotions/synthesis`;
+    setEmoSynReqUrl(targetUrl);
+    setEmoSynCurl(`curl -X 'POST' \\\n  '${targetUrl}' \\\n  -H 'accept: application/json' \\\n  -H 'Content-Type: application/json' \\\n  -d '${emoSynPayload.replace(/'/g, "'\\''")}'`);
+
+    try {
+      const startTime = performance.now();
+      const res = await fetch('/v1/emotions/synthesis', {
+        method: 'POST',
+        headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+        body: emoSynPayload
+      });
+      const endTime = performance.now();
+      setEmoSynHeaders(`content-type: application/json; charset=utf-8\ndate: ${new Date().toUTCString()}\nserver: Express\ntime: ${(endTime - startTime).toFixed(1)}ms`);
+
+      const data = await res.json();
+      const displayData = { ...data };
+      if (displayData.audio) {
+        displayData.audio_preview = "[BASE64_AUDIO_TRUNCATED]";
+        delete displayData.audio;
+      }
+      setEmoSynResponse(displayData);
+      
+      if (data.audio) {
+        const audioObj = new Audio('data:audio/mp3;base64,' + data.audio);
+        audioObj.play().catch(e => console.error("Could not play synthesized audio:", e));
+      }
+    } catch (e: any) {
+      console.error(e);
+      setEmoSynResponse({ error: e.message || 'Failed to execute emotion synthesis.' });
+      setEmoSynHeaders('connection: error');
+    } finally {
+      setEmoSynExecuting(false);
     }
   };
 
@@ -776,12 +1172,12 @@ export default function App() {
                               onChange={(e) => setPostVoiceName(e.target.value)}
                               className="w-full text-xs font-mono p-2 border border-gray-300 rounded disabled:bg-gray-50"
                             >
-                              <option value="Aoede">Jean Grey / Aoede (Recommended Secretary)</option>
-                              <option value="Zephyr">Flash / Zephyr (Energetic Male)</option>
-                              <option value="Kore">Invisible Woman / Kore (Soft Female)</option>
-                              <option value="Puck">Spider-Man / Puck (Playful Male)</option>
-                              <option value="Fenrir">Wolverine / Fenrir (Deep Husky Male)</option>
-                              <option value="Charon">Batman / Charon (Steady Professional Male)</option>
+                              <option value="Aoede">Jean Grey</option>
+                              <option value="Zephyr">Flash</option>
+                              <option value="Kore">Invisible Woman</option>
+                              <option value="Puck">Spider-Man</option>
+                              <option value="Fenrir">Wolverine</option>
+                              <option value="Charon">Batman</option>
                             </select>
                           </div>
 
@@ -997,12 +1393,12 @@ export default function App() {
                                 onChange={(e) => setWsVoice(e.target.value)}
                                 className="text-xs font-mono p-1 px-2 border border-gray-300 rounded bg-white outline-none focus:ring-1 focus:ring-orange-400 max-w-[240px]"
                               >
-                                <option value="Aoede">Jean Grey / Aoede (Recommended Female)</option>
-                                <option value="Zephyr">Flash / Zephyr (Energetic Male)</option>
-                                <option value="Kore">Invisible Woman / Kore (Soft Female)</option>
-                                <option value="Puck">Spider-Man / Puck (Playful Male)</option>
-                                <option value="Fenrir">Wolverine / Fenrir (Deep Husky Male)</option>
-                                <option value="Charon">Batman / Charon (Steady Male)</option>
+                                <option value="Aoede">Jean Grey</option>
+                                <option value="Zephyr">Flash</option>
+                                <option value="Kore">Invisible Woman</option>
+                                <option value="Puck">Spider-Man</option>
+                                <option value="Fenrir">Wolverine</option>
+                                <option value="Charon">Batman</option>
                               </select>
                             </div>
 
@@ -1121,8 +1517,8 @@ export default function App() {
                               onChange={(e) => setChatModel(e.target.value)}
                               className="w-full text-xs font-mono p-2 border border-gray-300 rounded disabled:bg-gray-50"
                             >
-                              <option value="eburon-voice-v1">eburon-voice-v1 (Default)</option>
-                              <option value="gemini-3.5-flash">gemini-3.5-flash</option>
+                              <option value="pluto-1.0">pluto-1.0 (Default)</option>
+                              <option value="pluto-1.5-pro">pluto-1.5-pro</option>
                             </select>
                           </div>
 
@@ -1283,13 +1679,12 @@ export default function App() {
                               onChange={(e) => setSpeechVoice(e.target.value)}
                               className="w-full text-xs font-mono p-2 border border-gray-300 rounded disabled:bg-gray-50"
                             >
-                              <option value="aoede">Jean Grey / Aoede (Recommended female)</option>
-                              <option value="alloy">Flash / Zephyr (Energetic male)</option>
-                              <option value="echo">Invisible Woman / Kore (Soft female)</option>
-                              <option value="fable">Spider-Man / Puck (Playful male)</option>
-                              <option value="onyx">Wolverine / Fenrir (Deep husky male)</option>
-                              <option value="nova">Batman / Charon (Steady professional male)</option>
-                              <option value="shimmer">Jean Grey / Aoede (Shimmer alternative)</option>
+                              <option value="aoede">Jean Grey</option>
+                              <option value="alloy">Flash</option>
+                              <option value="echo">Invisible Woman</option>
+                              <option value="fable">Spider-Man</option>
+                              <option value="onyx">Wolverine</option>
+                              <option value="nova">Batman</option>
                             </select>
                             <span className="text-[10px] text-gray-400 mt-1 block">Maps to premium Gemini TTS model voice prebuilts backend.</span>
                           </div>
@@ -1612,7 +2007,7 @@ export default function App() {
                               className="w-full text-xs font-mono p-2.5 border border-gray-300 rounded disabled:bg-gray-50 resize-none outline-none focus:ring-1 focus:ring-green-400"
                               placeholder="Describe what you want to visualize..."
                             />
-                            <span className="text-[10px] text-gray-400 mt-1 block">Backing model gemini-2.5-flash-image generates high clarity visual artifacts from semantic descriptions.</span>
+                            <span className="text-[10px] text-gray-400 mt-1 block">Backing model neptune-1.0 generates high clarity visual artifacts from semantic descriptions.</span>
                           </div>
                         </div>
 
@@ -1701,6 +2096,753 @@ export default function App() {
                 )}
               </div>
 
+              {/* ENDPOINT 7: GET /v1/languages */}
+              <div className={cn(
+                "border rounded overflow-hidden transition-all duration-200",
+                langExpanded ? "border-blue-400 bg-blue-50/10" : "border-blue-400/40 hover:bg-blue-400/5"
+              )}>
+                <div 
+                  onClick={() => setLangExpanded(!langExpanded)}
+                  className="bg-blue-400/10 px-4 py-3 flex items-center justify-between cursor-pointer select-none border-b border-blue-400/10"
+                >
+                  <div className="flex flex-wrap items-center gap-3">
+                    <span className="bg-blue-500 text-white font-extrabold text-xs px-2.5 py-1 rounded">GET</span>
+                    <span className="font-mono font-bold text-[#3b4151] text-sm tracking-tight">/v1/languages</span>
+                    <span className="text-gray-500 text-xs truncate max-w-md hidden sm:inline">Retrieve the supported 200 languages for live-audio and speech</span>
+                  </div>
+                  {langExpanded ? <ChevronDown className="w-5 h-5 text-gray-500" /> : <ChevronRight className="w-5 h-5 text-gray-500" />}
+                </div>
+
+                {langExpanded && (
+                  <div className="p-4 space-y-4 bg-white text-gray-700 text-sm">
+                    <div className="flex justify-between items-center bg-gray-50 p-2.5 rounded border border-gray-100">
+                      <span className="text-xs text-gray-500 font-semibold uppercase">Supported 200 Native Languages</span>
+                      <button 
+                        onClick={() => setLangTryItOut(!langTryItOut)}
+                        className={cn(
+                          "px-4 py-1 rounded text-xs font-bold uppercase tracking-wider transition-all border",
+                          langTryItOut ? "border-red-500 text-red-500 hover:bg-red-50" : "border-gray-300 text-gray-600 hover:bg-gray-100"
+                        )}
+                      >
+                        {langTryItOut ? 'Cancel' : 'Try it out'}
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-gray-100 pt-4">
+                      <div className="space-y-4">
+                        <h4 className="font-bold text-xs uppercase text-gray-500 tracking-wider">No Parameters</h4>
+                        {langTryItOut && (
+                          <button 
+                            onClick={executeLanguages}
+                            disabled={langExecuting}
+                            className="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 rounded text-xs font-bold uppercase font-mono tracking-wider transition-all disabled:opacity-50"
+                          >
+                            {langExecuting ? 'Executing...' : 'Execute'}
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="space-y-4 font-mono text-[11px]">
+                        <h4 className="font-bold text-xs uppercase text-gray-500 tracking-wider">Response</h4>
+                        {langResponse ? (
+                          <div className="space-y-3 font-mono text-[11px]">
+                            <div>
+                               <span className="text-gray-400 block text-[9px] uppercase font-semibold mb-1">Curl Command Line</span>
+                               <pre className="bg-[#292a2b] text-[#f8f8f2] p-2 rounded overflow-auto max-h-24 whitespace-pre">{langCurl}</pre>
+                            </div>
+                            <div>
+                               <span className="text-gray-400 block text-[9px] uppercase font-semibold mb-1">Request Endpoint URL</span>
+                               <pre className="bg-[#292a2b] text-blue-300 p-2 rounded overflow-auto whitespace-pre">{langReqUrl}</pre>
+                            </div>
+                            <div>
+                               <span className="text-green-500 font-bold block mb-1">Code 200 OK</span>
+                               <pre className="bg-[#292a2b] text-[#f8f8f2] p-2 rounded overflow-auto whitespace-pre max-h-40">{JSON.stringify(langResponse, null, 2)}</pre>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="h-full min-h-[160px] flex items-center justify-center border border-dashed border-gray-200 bg-gray-50 rounded text-center p-4">
+                            <span className="text-xs text-gray-400">Click &apos;Try it out&apos; and execute to fetch the 200 languages.</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* ENDPOINT 8: GET /v1/voices */}
+              <div className={cn(
+                "border rounded overflow-hidden transition-all duration-200",
+                voicesExpanded ? "border-blue-400 bg-blue-50/10" : "border-blue-400/40 hover:bg-blue-400/5"
+              )}>
+                <div 
+                  onClick={() => setVoicesExpanded(!voicesExpanded)}
+                  className="bg-blue-400/10 px-4 py-3 flex items-center justify-between cursor-pointer select-none border-b border-blue-400/10"
+                >
+                  <div className="flex flex-wrap items-center gap-3">
+                    <span className="bg-blue-500 text-white font-extrabold text-xs px-2.5 py-1 rounded">GET</span>
+                    <span className="font-mono font-bold text-[#3b4151] text-sm tracking-tight">/v1/voices</span>
+                    <span className="text-gray-500 text-xs truncate max-w-md hidden sm:inline">Retrieve all internal voices configured for Superhero personalities</span>
+                  </div>
+                  {voicesExpanded ? <ChevronDown className="w-5 h-5 text-gray-500" /> : <ChevronRight className="w-5 h-5 text-gray-500" />}
+                </div>
+
+                {voicesExpanded && (
+                  <div className="p-4 space-y-4 bg-white text-gray-700 text-sm">
+                    <div className="flex justify-between items-center bg-gray-50 p-2.5 rounded border border-gray-100">
+                      <span className="text-xs text-gray-500 font-semibold uppercase">All Internal Voices mapped to Superheroes</span>
+                      <button 
+                        onClick={() => setVoicesTryItOut(!voicesTryItOut)}
+                        className={cn(
+                          "px-4 py-1 rounded text-xs font-bold uppercase tracking-wider transition-all border",
+                          voicesTryItOut ? "border-red-500 text-red-500 hover:bg-red-50" : "border-gray-300 text-gray-600 hover:bg-gray-100"
+                        )}
+                      >
+                        {voicesTryItOut ? 'Cancel' : 'Try it out'}
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-gray-100 pt-4">
+                      <div className="space-y-4">
+                        <h4 className="font-bold text-xs uppercase text-gray-500 tracking-wider">No Parameters</h4>
+                        {voicesTryItOut && (
+                          <button 
+                            onClick={executeVoices}
+                            disabled={voicesExecuting}
+                            className="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 rounded text-xs font-bold uppercase font-mono tracking-wider transition-all disabled:opacity-50"
+                          >
+                            {voicesExecuting ? 'Executing...' : 'Execute'}
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="space-y-4 font-mono text-[11px]">
+                        <h4 className="font-bold text-xs uppercase text-gray-500 tracking-wider">Response</h4>
+                        {voicesResponse ? (
+                          <div className="space-y-3 font-mono text-[11px]">
+                            <div>
+                               <span className="text-gray-400 block text-[9px] uppercase font-semibold mb-1">Curl Command Line</span>
+                               <pre className="bg-[#292a2b] text-[#f8f8f2] p-2 rounded overflow-auto max-h-24 whitespace-pre">{voicesCurl}</pre>
+                            </div>
+                            <div>
+                               <span className="text-gray-400 block text-[9px] uppercase font-semibold mb-1">Request Endpoint URL</span>
+                               <pre className="bg-[#292a2b] text-blue-300 p-2 rounded overflow-auto whitespace-pre">{voicesReqUrl}</pre>
+                            </div>
+                            <div className="space-y-2">
+                               <span className="text-green-500 font-bold block mb-1">Code 200 OK</span>
+                               
+                               {voicesResponse.data ? (
+                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4 h-96 overflow-y-auto pr-2 custom-scrollbar">
+                                   {voicesResponse.data.map((voice: any) => (
+                                     <div key={voice.id} className="bg-white border border-gray-200 rounded-lg p-3 hover:border-blue-400 transition-colors shadow-sm">
+                                       <div className="flex justify-between items-start mb-2">
+                                         <div>
+                                           <h5 className="font-extrabold text-sm text-gray-800">{voice.superhero_name}</h5>
+                                           <span className="text-[10px] uppercase font-bold text-gray-400">ID: {voice.id} • {voice.gender}</span>
+                                         </div>
+                                         <button 
+                                           onClick={(e) => { e.preventDefault(); playSampleVoice(voice); }}
+                                           className="p-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-full transition-colors group"
+                                           title="Play Audio Sample"
+                                         >
+                                           <Play className="w-4 h-4 fill-current group-hover:scale-110 transition-transform" />
+                                         </button>
+                                       </div>
+                                       <div className="space-y-1 mt-2 border-t border-gray-100 pt-2">
+                                         <p className="text-xs text-gray-600 leading-snug"><span className="font-semibold text-gray-500">Tone:</span> {voice.tone}</p>
+                                         <p className="text-[11px] text-gray-500 italic line-clamp-2">"{voice.description}"</p>
+                                       </div>
+                                     </div>
+                                   ))}
+                                 </div>
+                               ) : (
+                                 <pre className="bg-[#292a2b] text-[#f8f8f2] p-2 rounded overflow-auto whitespace-pre max-h-40">{JSON.stringify(voicesResponse, null, 2)}</pre>
+                               )}
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="h-full min-h-[160px] flex items-center justify-center border border-dashed border-gray-200 bg-gray-50 rounded text-center p-4">
+                            <span className="text-xs text-gray-400">Click &apos;Try it out&apos; and execute to fetch the superheroes voices mapping.</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* ENDPOINT 9: POST /v1/video/screenshare */}
+              <div className={cn(
+                "border rounded overflow-hidden transition-all duration-200",
+                shareExpanded ? "border-green-500 bg-green-50/10" : "border-green-500/40 hover:bg-green-500/5"
+              )}>
+                <div 
+                  onClick={() => setShareExpanded(!shareExpanded)}
+                  className="bg-green-500/10 px-4 py-3 flex items-center justify-between cursor-pointer select-none border-b border-green-500/10"
+                >
+                  <div className="flex flex-wrap items-center gap-3">
+                    <span className="bg-green-600 text-white font-extrabold text-xs px-2.5 py-1 rounded">POST</span>
+                    <span className="font-mono font-bold text-[#3b4151] text-sm tracking-tight">/v1/video/screenshare</span>
+                    <span className="text-gray-500 text-xs truncate max-w-md hidden sm:inline">Create a share screen session for video streaming</span>
+                  </div>
+                  {shareExpanded ? <ChevronDown className="w-5 h-5 text-gray-500" /> : <ChevronRight className="w-5 h-5 text-gray-500" />}
+                </div>
+
+                {shareExpanded && (
+                  <div className="p-4 space-y-4 bg-white text-gray-700 text-sm">
+                    <div className="flex justify-between items-center bg-gray-50 p-2.5 rounded border border-gray-100">
+                      <span className="text-xs text-gray-500 font-semibold uppercase">Screenshare Session Initiation</span>
+                      <button 
+                        onClick={() => setShareTryItOut(!shareTryItOut)}
+                        className={cn(
+                          "px-4 py-1 rounded text-xs font-bold uppercase tracking-wider transition-all border",
+                          shareTryItOut ? "border-red-500 text-red-500 hover:bg-red-50" : "border-gray-300 text-gray-600 hover:bg-gray-100"
+                        )}
+                      >
+                        {shareTryItOut ? 'Cancel' : 'Try it out'}
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-gray-100 pt-4">
+                      <div className="space-y-4">
+                        <h4 className="font-bold text-xs uppercase text-gray-500 tracking-wider">No Parameters Required</h4>
+                        {shareTryItOut && (
+                          <button 
+                            onClick={executeScreenshare}
+                            disabled={shareExecuting}
+                            className="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded text-xs font-bold uppercase font-mono tracking-wider transition-all disabled:opacity-50"
+                          >
+                            {shareExecuting ? 'Executing...' : 'Execute'}
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="space-y-4 font-mono text-[11px]">
+                        <h4 className="font-bold text-xs uppercase text-gray-500 tracking-wider">Response</h4>
+                        {shareResponse ? (
+                          <div className="space-y-3 font-mono text-[11px]">
+                            <div>
+                               <span className="text-gray-400 block text-[9px] uppercase font-semibold mb-1">Curl Command Line</span>
+                               <pre className="bg-[#292a2b] text-[#f8f8f2] p-2 rounded overflow-auto max-h-24 whitespace-pre">{shareCurl}</pre>
+                            </div>
+                            <div>
+                               <span className="text-gray-400 block text-[9px] uppercase font-semibold mb-1">Request Endpoint URL</span>
+                               <pre className="bg-[#292a2b] text-blue-300 p-2 rounded overflow-auto whitespace-pre">{shareReqUrl}</pre>
+                            </div>
+                            <div>
+                               <span className="text-green-500 font-bold block mb-1">Code 200 OK</span>
+                               <pre className="bg-[#292a2b] text-[#f8f8f2] p-2 rounded overflow-auto whitespace-pre max-h-40">{JSON.stringify(shareResponse, null, 2)}</pre>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="h-full min-h-[160px] flex items-center justify-center border border-dashed border-gray-200 bg-gray-50 rounded text-center p-4">
+                            <span className="text-xs text-gray-400">Click &apos;Try it out&apos; and execute to start a screenshare streaming session.</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* ENDPOINT 10: POST /v1/functions/execute */}
+              <div className={cn(
+                "border rounded overflow-hidden transition-all duration-200",
+                funcExecExpanded ? "border-green-500 bg-green-50/10" : "border-green-500/40 hover:bg-green-500/5"
+              )}>
+                <div 
+                  onClick={() => setFuncExecExpanded(!funcExecExpanded)}
+                  className="bg-green-500/10 px-4 py-3 flex items-center justify-between cursor-pointer select-none border-b border-green-500/10"
+                >
+                  <div className="flex flex-wrap items-center gap-3">
+                    <span className="bg-green-600 text-white font-extrabold text-xs px-2.5 py-1 rounded">POST</span>
+                    <span className="font-mono font-bold text-[#3b4151] text-sm tracking-tight">/v1/functions/execute</span>
+                    <span className="text-gray-500 text-xs truncate max-w-md hidden sm:inline">Create function calls dynamically</span>
+                  </div>
+                  {funcExecExpanded ? <ChevronDown className="w-5 h-5 text-gray-500" /> : <ChevronRight className="w-5 h-5 text-gray-500" />}
+                </div>
+
+                {funcExecExpanded && (
+                  <div className="p-4 space-y-4 bg-white text-gray-700 text-sm">
+                    <div className="flex justify-between items-center bg-gray-50 p-2.5 rounded border border-gray-100">
+                      <span className="text-xs text-gray-500 font-semibold uppercase">Execute Function</span>
+                      <button 
+                        onClick={() => setFuncExecTryItOut(!funcExecTryItOut)}
+                        className={cn(
+                          "px-4 py-1 rounded text-xs font-bold uppercase tracking-wider transition-all border",
+                          funcExecTryItOut ? "border-red-500 text-red-500 hover:bg-red-50" : "border-gray-300 text-gray-600 hover:bg-gray-100"
+                        )}
+                      >
+                        {funcExecTryItOut ? 'Cancel' : 'Try it out'}
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-gray-100 pt-4">
+                      <div className="space-y-4">
+                        <h4 className="font-bold text-xs uppercase text-gray-500 tracking-wider">Parameters</h4>
+                        <div className="space-y-2">
+                          <label className="text-xs font-bold text-gray-600 block">Payload Structure</label>
+                          <textarea
+                            disabled={!funcExecTryItOut}
+                            value={funcExecPayload}
+                            onChange={(e) => setFuncExecPayload(e.target.value)}
+                            className="w-full h-32 font-mono text-[11px] p-2 border border-gray-300 rounded disabled:bg-gray-50"
+                          />
+                        </div>
+                        {funcExecTryItOut && (
+                          <button 
+                            onClick={executeFuncExec}
+                            disabled={funcExecExecuting}
+                            className="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded text-xs font-bold uppercase font-mono tracking-wider transition-all disabled:opacity-50"
+                          >
+                            {funcExecExecuting ? 'Executing...' : 'Execute'}
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="space-y-4 font-mono text-[11px]">
+                        <h4 className="font-bold text-xs uppercase text-gray-500 tracking-wider">Response</h4>
+                        {funcExecResponse ? (
+                          <div className="space-y-3 font-mono text-[11px]">
+                            <div>
+                               <span className="text-gray-400 block text-[9px] uppercase font-semibold mb-1">Curl Command Line</span>
+                               <pre className="bg-[#292a2b] text-[#f8f8f2] p-2 rounded overflow-auto max-h-24 whitespace-pre">{funcExecCurl}</pre>
+                            </div>
+                            <div>
+                               <span className="text-gray-400 block text-[9px] uppercase font-semibold mb-1">Request Endpoint URL</span>
+                               <pre className="bg-[#292a2b] text-blue-300 p-2 rounded overflow-auto whitespace-pre">{funcExecReqUrl}</pre>
+                            </div>
+                            <div>
+                               <span className="text-green-500 font-bold block mb-1">Code 200 OK</span>
+                               <pre className="bg-[#292a2b] text-[#f8f8f2] p-2 rounded overflow-auto whitespace-pre max-h-40">{JSON.stringify(funcExecResponse, null, 2)}</pre>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="h-full min-h-[160px] flex items-center justify-center border border-dashed border-gray-200 bg-gray-50 rounded text-center p-4">
+                            <span className="text-xs text-gray-400">Click &apos;Try it out&apos; and execute to send the payload.</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* ENDPOINT 11: POST /v1/functions/outputs */}
+              <div className={cn(
+                "border rounded overflow-hidden transition-all duration-200",
+                funcOutExpanded ? "border-green-500 bg-green-50/10" : "border-green-500/40 hover:bg-green-500/5"
+              )}>
+                <div 
+                  onClick={() => setFuncOutExpanded(!funcOutExpanded)}
+                  className="bg-green-500/10 px-4 py-3 flex items-center justify-between cursor-pointer select-none border-b border-green-500/10"
+                >
+                  <div className="flex flex-wrap items-center gap-3">
+                    <span className="bg-green-600 text-white font-extrabold text-xs px-2.5 py-1 rounded">POST</span>
+                    <span className="font-mono font-bold text-[#3b4151] text-sm tracking-tight">/v1/functions/outputs</span>
+                    <span className="text-gray-500 text-xs truncate max-w-md hidden sm:inline">Submit function tool execution outputs back to the engine</span>
+                  </div>
+                  {funcOutExpanded ? <ChevronDown className="w-5 h-5 text-gray-500" /> : <ChevronRight className="w-5 h-5 text-gray-500" />}
+                </div>
+
+                {funcOutExpanded && (
+                  <div className="p-4 space-y-4 bg-white text-gray-700 text-sm">
+                    <div className="flex justify-between items-center bg-gray-50 p-2.5 rounded border border-gray-100">
+                      <span className="text-xs text-gray-500 font-semibold uppercase">Tool Outputs Response</span>
+                      <button 
+                        onClick={() => setFuncOutTryItOut(!funcOutTryItOut)}
+                        className={cn(
+                          "px-4 py-1 rounded text-xs font-bold uppercase tracking-wider transition-all border",
+                          funcOutTryItOut ? "border-red-500 text-red-500 hover:bg-red-50" : "border-gray-300 text-gray-600 hover:bg-gray-100"
+                        )}
+                      >
+                        {funcOutTryItOut ? 'Cancel' : 'Try it out'}
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-gray-100 pt-4">
+                      <div className="space-y-4">
+                        <h4 className="font-bold text-xs uppercase text-gray-500 tracking-wider">Parameters</h4>
+                        <div className="space-y-2">
+                          <label className="text-xs font-bold text-gray-600 block">Outputs Array Structure</label>
+                          <textarea
+                            disabled={!funcOutTryItOut}
+                            value={funcOutPayload}
+                            onChange={(e) => setFuncOutPayload(e.target.value)}
+                            className="w-full h-32 font-mono text-[11px] p-2 border border-gray-300 rounded disabled:bg-gray-50"
+                          />
+                        </div>
+                        {funcOutTryItOut && (
+                          <button 
+                            onClick={executeFuncOut}
+                            disabled={funcOutExecuting}
+                            className="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded text-xs font-bold uppercase font-mono tracking-wider transition-all disabled:opacity-50"
+                          >
+                            {funcOutExecuting ? 'Executing...' : 'Execute'}
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="space-y-4 font-mono text-[11px]">
+                        <h4 className="font-bold text-xs uppercase text-gray-500 tracking-wider">Response</h4>
+                        {funcOutResponse ? (
+                          <div className="space-y-3 font-mono text-[11px]">
+                            <div>
+                               <span className="text-gray-400 block text-[9px] uppercase font-semibold mb-1">Curl Command Line</span>
+                               <pre className="bg-[#292a2b] text-[#f8f8f2] p-2 rounded overflow-auto max-h-24 whitespace-pre">{funcOutCurl}</pre>
+                            </div>
+                            <div>
+                               <span className="text-gray-400 block text-[9px] uppercase font-semibold mb-1">Request Endpoint URL</span>
+                               <pre className="bg-[#292a2b] text-blue-300 p-2 rounded overflow-auto whitespace-pre">{funcOutReqUrl}</pre>
+                            </div>
+                            <div>
+                               <span className="text-green-500 font-bold block mb-1">Code 200 OK</span>
+                               <pre className="bg-[#292a2b] text-[#f8f8f2] p-2 rounded overflow-auto whitespace-pre max-h-40">{JSON.stringify(funcOutResponse, null, 2)}</pre>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="h-full min-h-[160px] flex items-center justify-center border border-dashed border-gray-200 bg-gray-50 rounded text-center p-4">
+                            <span className="text-xs text-gray-400">Click &apos;Try it out&apos; and execute to submit outputs.</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* ENDPOINT 12: POST /v1/emotions/synthesis */}
+              <div className={cn(
+                "border rounded overflow-hidden transition-all duration-200",
+                emoSynExpanded ? "border-blue-400 bg-blue-50/10" : "border-blue-400/40 hover:bg-blue-400/5"
+              )}>
+                <div 
+                  onClick={() => setEmoSynExpanded(!emoSynExpanded)}
+                  className="bg-blue-400/10 px-4 py-3 flex items-center justify-between cursor-pointer select-none border-b border-blue-400/10"
+                >
+                  <div className="flex flex-wrap items-center gap-3">
+                    <span className="bg-blue-500 text-white font-extrabold text-xs px-2.5 py-1 rounded">POST</span>
+                    <span className="font-mono font-bold text-[#3b4151] text-sm tracking-tight">/v1/emotions/synthesis</span>
+                    <span className="text-gray-500 text-xs truncate max-w-md hidden sm:inline">Ojo Synthesis: Highly emotive and playable nuanced voice generation</span>
+                  </div>
+                  {emoSynExpanded ? <ChevronDown className="w-5 h-5 text-gray-500" /> : <ChevronRight className="w-5 h-5 text-gray-500" />}
+                </div>
+
+                {emoSynExpanded && (
+                  <div className="p-4 space-y-4 bg-white text-gray-700 text-sm">
+                    <div className="flex justify-between items-center bg-gray-50 p-2.5 rounded border border-gray-100">
+                      <span className="text-xs text-gray-500 font-semibold uppercase">Ojo Emotion Synthesis</span>
+                      <button 
+                        onClick={() => setEmoSynTryItOut(!emoSynTryItOut)}
+                        className={cn(
+                          "px-4 py-1 rounded text-xs font-bold uppercase tracking-wider transition-all border",
+                          emoSynTryItOut ? "border-red-500 text-red-500 hover:bg-red-50" : "border-gray-300 text-gray-600 hover:bg-gray-100"
+                        )}
+                      >
+                        {emoSynTryItOut ? 'Cancel' : 'Try it out'}
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-gray-100 pt-4">
+                      <div className="space-y-4">
+                        <h4 className="font-bold text-xs uppercase text-gray-500 tracking-wider">Parameters</h4>
+                        <div className="space-y-2">
+                          <label className="text-xs font-bold text-gray-600 block">Payload Structure</label>
+                          <textarea
+                            disabled={!emoSynTryItOut}
+                            value={emoSynPayload}
+                            onChange={(e) => setEmoSynPayload(e.target.value)}
+                            className="w-full h-32 font-mono text-[11px] p-2 border border-gray-300 rounded disabled:bg-gray-50"
+                          />
+                        </div>
+                        {emoSynTryItOut && (
+                          <button 
+                            onClick={executeEmoSyn}
+                            disabled={emoSynExecuting}
+                            className="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 rounded text-xs font-bold uppercase font-mono tracking-wider transition-all disabled:opacity-50"
+                          >
+                            {emoSynExecuting ? 'Executing...' : 'Execute'}
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="space-y-4 font-mono text-[11px]">
+                        <h4 className="font-bold text-xs uppercase text-gray-500 tracking-wider">Response</h4>
+                        {emoSynResponse ? (
+                          <div className="space-y-3 font-mono text-[11px]">
+                            <div>
+                               <span className="text-gray-400 block text-[9px] uppercase font-semibold mb-1">Curl Command Line</span>
+                               <pre className="bg-[#292a2b] text-[#f8f8f2] p-2 rounded overflow-auto max-h-24 whitespace-pre">{emoSynCurl}</pre>
+                            </div>
+                            <div>
+                               <span className="text-gray-400 block text-[9px] uppercase font-semibold mb-1">Request Endpoint URL</span>
+                               <pre className="bg-[#292a2b] text-blue-300 p-2 rounded overflow-auto whitespace-pre">{emoSynReqUrl}</pre>
+                            </div>
+                            <div>
+                               <span className="text-green-500 font-bold block mb-1">Code 200 OK</span>
+                               {emoSynResponse.audio_preview && (
+                                 <div className="mb-2 p-2 bg-green-500/10 border border-green-500/30 rounded text-green-700 flex items-center gap-2">
+                                   <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                                   Ojo Audio Synthesized - Playing Automatically...
+                                 </div>
+                               )}
+                               <pre className="bg-[#292a2b] text-[#f8f8f2] p-2 rounded overflow-auto whitespace-pre max-h-40">{JSON.stringify(emoSynResponse, null, 2)}</pre>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="h-full min-h-[160px] flex items-center justify-center border border-dashed border-gray-200 bg-gray-50 rounded text-center p-4">
+                            <span className="text-xs text-gray-400">Click &apos;Try it out&apos; and execute to start synthesis.</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* ENDPOINT 13: GET /v1/emotions/results */}
+              <div className={cn(
+                "border rounded overflow-hidden transition-all duration-200",
+                emoResExpanded ? "border-blue-400 bg-blue-50/10" : "border-blue-400/40 hover:bg-blue-400/5"
+              )}>
+                <div 
+                  onClick={() => setEmoResExpanded(!emoResExpanded)}
+                  className="bg-blue-400/10 px-4 py-3 flex items-center justify-between cursor-pointer select-none border-b border-blue-400/10"
+                >
+                  <div className="flex flex-wrap items-center gap-3">
+                    <span className="bg-blue-500 text-white font-extrabold text-xs px-2.5 py-1 rounded">GET</span>
+                    <span className="font-mono font-bold text-[#3b4151] text-sm tracking-tight">/v1/emotions/results</span>
+                    <span className="text-gray-500 text-xs truncate max-w-md hidden sm:inline">Retrieve emotion synthesis result lists</span>
+                  </div>
+                  {emoResExpanded ? <ChevronDown className="w-5 h-5 text-gray-500" /> : <ChevronRight className="w-5 h-5 text-gray-500" />}
+                </div>
+
+                {emoResExpanded && (
+                  <div className="p-4 space-y-4 bg-white text-gray-700 text-sm">
+                    <div className="flex justify-between items-center bg-gray-50 p-2.5 rounded border border-gray-100">
+                      <span className="text-xs text-gray-500 font-semibold uppercase">Retrieve Emotion Results</span>
+                      <button 
+                        onClick={() => setEmoResTryItOut(!emoResTryItOut)}
+                        className={cn(
+                          "px-4 py-1 rounded text-xs font-bold uppercase tracking-wider transition-all border",
+                          emoResTryItOut ? "border-red-500 text-red-500 hover:bg-red-50" : "border-gray-300 text-gray-600 hover:bg-gray-100"
+                        )}
+                      >
+                        {emoResTryItOut ? 'Cancel' : 'Try it out'}
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-gray-100 pt-4">
+                      <div className="space-y-4">
+                        <h4 className="font-bold text-xs uppercase text-gray-500 tracking-wider">No Parameters Required</h4>
+                        {emoResTryItOut && (
+                          <button 
+                            onClick={executeEmoRes}
+                            disabled={emoResExecuting}
+                            className="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 rounded text-xs font-bold uppercase font-mono tracking-wider transition-all disabled:opacity-50"
+                          >
+                            {emoResExecuting ? 'Executing...' : 'Execute'}
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="space-y-4 font-mono text-[11px]">
+                        <h4 className="font-bold text-xs uppercase text-gray-500 tracking-wider">Response</h4>
+                        {emoResResponse ? (
+                          <div className="space-y-3 font-mono text-[11px]">
+                            <div>
+                               <span className="text-gray-400 block text-[9px] uppercase font-semibold mb-1">Curl Command Line</span>
+                               <pre className="bg-[#292a2b] text-[#f8f8f2] p-2 rounded overflow-auto max-h-24 whitespace-pre">{emoResCurl}</pre>
+                            </div>
+                            <div>
+                               <span className="text-gray-400 block text-[9px] uppercase font-semibold mb-1">Request Endpoint URL</span>
+                               <pre className="bg-[#292a2b] text-blue-300 p-2 rounded overflow-auto whitespace-pre">{emoResReqUrl}</pre>
+                            </div>
+                            <div>
+                               <span className="text-green-500 font-bold block mb-1">Code 200 OK</span>
+                               <pre className="bg-[#292a2b] text-[#f8f8f2] p-2 rounded overflow-auto whitespace-pre max-h-40">{JSON.stringify(emoResResponse, null, 2)}</pre>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="h-full min-h-[160px] flex items-center justify-center border border-dashed border-gray-200 bg-gray-50 rounded text-center p-4">
+                            <span className="text-xs text-gray-400">Click &apos;Try it out&apos; and execute to retrieve results.</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* ENDPOINT 14: POST /v1/audio/speech/stream */}
+              <div className={cn(
+                "border rounded overflow-hidden transition-all duration-200",
+                ttstreamExpanded ? "border-green-500 bg-green-50/10" : "border-green-500/40 hover:bg-green-500/5"
+              )}>
+                <div 
+                  onClick={() => setTtstreamExpanded(!ttstreamExpanded)}
+                  className="bg-green-500/10 px-4 py-3 flex items-center justify-between cursor-pointer select-none border-b border-green-500/10"
+                >
+                  <div className="flex flex-wrap items-center gap-3">
+                    <span className="bg-green-600 text-white font-extrabold text-xs px-2.5 py-1 rounded">POST</span>
+                    <span className="font-mono font-bold text-[#3b4151] text-sm tracking-tight">/v1/audio/speech/stream</span>
+                    <span className="text-gray-500 text-xs truncate max-w-md hidden sm:inline">Streaming generation for live speech instantly</span>
+                  </div>
+                  {ttstreamExpanded ? <ChevronDown className="w-5 h-5 text-gray-500" /> : <ChevronRight className="w-5 h-5 text-gray-500" />}
+                </div>
+
+                {ttstreamExpanded && (
+                  <div className="p-4 space-y-4 bg-white text-gray-700 text-sm">
+                    <div className="flex justify-between items-center bg-gray-50 p-2.5 rounded border border-gray-100">
+                      <span className="text-xs text-gray-500 font-semibold uppercase">Generate Audio Stream</span>
+                      <button 
+                        onClick={() => setTtstreamTryItOut(!ttstreamTryItOut)}
+                        className={cn(
+                          "px-4 py-1 rounded text-xs font-bold uppercase tracking-wider transition-all border",
+                          ttstreamTryItOut ? "border-red-500 text-red-500 hover:bg-red-50" : "border-gray-300 text-gray-600 hover:bg-gray-100"
+                        )}
+                      >
+                        {ttstreamTryItOut ? 'Cancel' : 'Try it out'}
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-gray-100 pt-4">
+                      <div className="space-y-4">
+                        <h4 className="font-bold text-xs uppercase text-gray-500 tracking-wider">Parameters</h4>
+                        <div className="space-y-2">
+                          <label className="text-xs font-bold text-gray-600 block">Payload Structure</label>
+                          <textarea
+                            disabled={!ttstreamTryItOut}
+                            value={ttstreamPayload}
+                            onChange={(e) => setTtstreamPayload(e.target.value)}
+                            className="w-full h-32 font-mono text-[11px] p-2 border border-gray-300 rounded disabled:bg-gray-50"
+                          />
+                        </div>
+                        {ttstreamTryItOut && (
+                          <button 
+                            onClick={executeTTStream}
+                            disabled={ttstreamExecuting}
+                            className="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded text-xs font-bold uppercase font-mono tracking-wider transition-all disabled:opacity-50"
+                          >
+                            {ttstreamExecuting ? 'Executing...' : 'Execute Stream'}
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="space-y-4 font-mono text-[11px]">
+                        <h4 className="font-bold text-xs uppercase text-gray-500 tracking-wider">Response Stream</h4>
+                        {ttstreamReqUrl ? (
+                          <div className="space-y-3 font-mono text-[11px]">
+                            <div>
+                               <span className="text-gray-400 block text-[9px] uppercase font-semibold mb-1">Curl Command Line</span>
+                               <pre className="bg-[#292a2b] text-[#f8f8f2] p-2 rounded overflow-auto max-h-24 whitespace-pre">{ttstreamCurl}</pre>
+                            </div>
+                            <div>
+                               <span className="text-gray-400 block text-[9px] uppercase font-semibold mb-1">Request Endpoint URL</span>
+                               <pre className="bg-[#292a2b] text-blue-300 p-2 rounded overflow-auto whitespace-pre">{ttstreamReqUrl}</pre>
+                            </div>
+                            <div>
+                               <span className="text-green-500 font-bold block mb-1">Code 200 OK (Audio Stream Chunks)</span>
+                               <pre className="bg-[#292a2b] text-[#f8f8f2] p-2 rounded overflow-auto whitespace-pre max-h-40 break-words whitespace-pre-wrap">{ttstreamResponse}</pre>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="h-full min-h-[160px] flex items-center justify-center border border-dashed border-gray-200 bg-gray-50 rounded text-center p-4">
+                            <span className="text-xs text-gray-400">Click &apos;Try it out&apos; and execute to listen stream.</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* ENDPOINT 15: POST /v1/video/analysis/stream */}
+              <div className={cn(
+                "border rounded overflow-hidden transition-all duration-200",
+                vidAnExpanded ? "border-purple-500 bg-purple-50/10" : "border-purple-500/40 hover:bg-purple-500/5"
+              )}>
+                <div 
+                  onClick={() => setVidAnExpanded(!vidAnExpanded)}
+                  className="bg-purple-500/10 px-4 py-3 flex items-center justify-between cursor-pointer select-none border-b border-purple-500/10"
+                >
+                  <div className="flex flex-wrap items-center gap-3">
+                    <span className="bg-purple-600 text-white font-extrabold text-xs px-2.5 py-1 rounded">POST</span>
+                    <span className="font-mono font-bold text-[#3b4151] text-sm tracking-tight">/v1/video/analysis/stream</span>
+                    <span className="text-gray-500 text-xs truncate max-w-md hidden sm:inline">Simulated video analysis stream (Live Video-to-Text & TTS) via Pluto 1.0</span>
+                  </div>
+                  {vidAnExpanded ? <ChevronDown className="w-5 h-5 text-gray-500" /> : <ChevronRight className="w-5 h-5 text-gray-500" />}
+                </div>
+
+                {vidAnExpanded && (
+                  <div className="p-4 space-y-4 bg-white text-gray-700 text-sm">
+                    <div className="flex justify-between items-center bg-gray-50 p-2.5 rounded border border-gray-100">
+                      <span className="text-xs text-gray-500 font-semibold uppercase">Analyze Video Stream</span>
+                      <button 
+                        onClick={() => setVidAnTryItOut(!vidAnTryItOut)}
+                        className={cn(
+                          "px-4 py-1 rounded text-xs font-bold uppercase tracking-wider transition-all border",
+                          vidAnTryItOut ? "border-red-500 text-red-500 hover:bg-red-50" : "border-gray-300 text-gray-600 hover:bg-gray-100"
+                        )}
+                      >
+                        {vidAnTryItOut ? 'Cancel' : 'Try it out'}
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-gray-100 pt-4">
+                      <div className="space-y-4">
+                        <h4 className="font-bold text-xs uppercase text-gray-500 tracking-wider">Instructions</h4>
+                        <div className="space-y-2">
+                          <p className="text-[11px] text-gray-500">This endpoint mimics the continuous video analysis of <b>Pluto 1.0</b>. It streams JSON chunks containing real-time text descriptions of the video context, accompanied by synthesized Base64 audio describing the frame.</p>
+                        </div>
+                        {vidAnTryItOut && (
+                          <button 
+                            onClick={executeVidAn}
+                            disabled={vidAnExecuting}
+                            className="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 rounded text-xs font-bold uppercase font-mono tracking-wider transition-all disabled:opacity-50"
+                          >
+                            {vidAnExecuting ? 'Analyzing stream...' : 'Start Video Analysis'}
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="space-y-4 font-mono text-[11px]">
+                        <h4 className="font-bold text-xs uppercase text-gray-500 tracking-wider">Response Stream (SSE)</h4>
+                        {vidAnReqUrl ? (
+                          <div className="space-y-3 font-mono text-[11px]">
+                            <div>
+                               <span className="text-gray-400 block text-[9px] uppercase font-semibold mb-1">Curl Command Line</span>
+                               <pre className="bg-[#292a2b] text-[#f8f8f2] p-2 rounded overflow-auto max-h-24 whitespace-pre">{vidAnCurl}</pre>
+                            </div>
+                            <div>
+                               <span className="text-gray-400 block text-[9px] uppercase font-semibold mb-1">Request Endpoint URL</span>
+                               <pre className="bg-[#292a2b] text-blue-300 p-2 rounded overflow-auto whitespace-pre">{vidAnReqUrl}</pre>
+                            </div>
+                            <div>
+                               <span className="text-green-500 font-bold block mb-1">Code 200 OK (Event Stream)</span>
+                               <div className="bg-[#292a2b] text-[#f8f8f2] p-2 rounded overflow-auto whitespace-pre max-h-60 break-words space-y-1">
+                                 {vidAnResponse.map((item, i) => (
+                                   <div key={i} className="mb-2">
+                                     <span className="text-blue-300">Chunk {i+1}: </span>
+                                     <span>{item.description || JSON.stringify(item)}</span>
+                                     {item.audio && <span className="text-green-400 text-[9px] block">→ TTS Audio Received (Playing...)</span>}
+                                   </div>
+                                 ))}
+                                 {vidAnExecuting && <div className="text-gray-500 italic mt-2">Waiting for next frame chunk...</div>}
+                               </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="h-full min-h-[160px] flex items-center justify-center border border-dashed border-gray-200 bg-gray-50 rounded text-center p-4">
+                            <span className="text-xs text-gray-400">Click &apos;Try it out&apos; and execute to start the mock video analysis stream.</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
             </div>
           )}
         </section>
@@ -1778,7 +2920,7 @@ export default function App() {
       "content": "string"   // Text queries or custom voice guidance
     }
   ],
-  "model": "string",        // Defaults to 'eburon-voice-v1' or 'gemini-3.5-flash'
+  "model": "string",        // Defaults to 'pluto-1.0' or 'pluto-1.5-pro'
   "temperature": "number"   // 0.0 to 1.0 creativity index threshold
 }`}
                   </pre>
