@@ -1383,7 +1383,7 @@ export default function App() {
                   <div className="flex flex-wrap items-center gap-3">
                     <span className="bg-[#61affe] text-white font-extrabold text-xs px-2.5 py-1 rounded">WS</span>
                     <span className="font-mono font-bold text-[#3b4151] text-sm tracking-tight">/ws/live-audio</span>
-                    <span className="text-gray-500 text-xs truncate max-w-md hidden sm:inline">Connect to Gemini Live Audio stream</span>
+                    <span className="text-gray-500 text-xs truncate max-w-md hidden sm:inline">Connect to Eburon Live Audio stream</span>
                   </div>
                   {wsExpanded ? <ChevronDown className="w-5 h-5 text-gray-500" /> : <ChevronRight className="w-5 h-5 text-gray-500" />}
                 </div>
@@ -1827,7 +1827,7 @@ export default function App() {
                               <option value="onyx">Wolverine</option>
                               <option value="nova">Batman</option>
                             </select>
-                            <span className="text-[10px] text-gray-400 mt-1 block">Maps to premium Gemini TTS model voice prebuilts backend.</span>
+                            <span className="text-[10px] text-gray-400 mt-1 block">Maps to premium Eburon TTS model voice prebuilts backend.</span>
                           </div>
                         </div>
 

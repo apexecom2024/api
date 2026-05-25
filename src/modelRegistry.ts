@@ -23,8 +23,8 @@ export const modelRegistry: ModelEntry[] = [
   {
     publicName: "Pluto 1.0",
     publicModelId: "pluto-1.0-live",
-    provider: "Z29vZ2xlLWdlbWluaS1saXZlLWF1ZGlv", // google-gemini-live-audio
-    providerModelId: "Z2VtaW5pLTIuNS1mbGFzaC1uYXRpdmUtYXVkaW8tcHJldmlldy0wOS0yMDI1", // gemini-2.5-flash-native-audio-preview-09-2025
+    provider: "Z29vZ2xlLWdlbWluaS1saXZlLWF1ZGlv",
+    providerModelId: "Z2VtaW5pLTIuNS1mbGFzaC1uYXRpdmUtYXVkaW8tcHJldmlldy0wOS0yMDI1",
     status: "whitelisted",
     owner: "Eburon AI"
   }

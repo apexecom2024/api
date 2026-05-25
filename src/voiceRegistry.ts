@@ -1,6 +1,6 @@
 export interface VoiceEntry {
   displayName: string;
-  providerVoiceId: string; // Base64 encoded original voice name
+  providerVoiceId: string; // Eburon internal identity token
   voiceToken: string;
   enabled: boolean;
 }
@@ -56,20 +56,10 @@ export function resolveVoiceToken(token: string): string {
   const normToken = token.trim();
   const entry = voiceRegistry.find(v => 
     v.voiceToken === normToken || 
-    decodeBase64(v.providerVoiceId).toLowerCase() === normToken.toLowerCase() || 
     v.displayName.toLowerCase() === normToken.toLowerCase()
   );
   if (entry) {
     return decodeBase64(entry.providerVoiceId);
-  }
-  // If not found, try raw base64 decode mapping
-  try {
-    const decoded = decodeBase64(normToken);
-    if (decoded && decoded.length > 1 && /^[a-zA-Z]+$/.test(decoded)) {
-      return decoded;
-    }
-  } catch {
-    // ignore
   }
   return 'Aoede'; // fallback
 }

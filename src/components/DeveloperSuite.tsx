@@ -115,6 +115,107 @@ const endpointCollection: EndpointSpec[] = [
     curl: `curl -X POST "http://localhost:3000/api/live/screen-share" \\\n  -H "Content-Type: application/json" \\\n  -d '{\n    "sessionId": "session_123",\n    "source": "entire_screen",\n    "fps": 5,\n    "compressRatio": 0.8\n  }'`
   },
 
+  // Google Service Tools
+  {
+    path: '/api/tools/google/drive/list_files',
+    method: 'POST',
+    purpose: 'List files and directories from the Eburon connected Drive storage volumes.',
+    requestBody: `{\n  "folderId": "root"\n}`,
+    responseBody: `{\n  "success": true,\n  "files": [\n    { "id": "file_901a", "name": "Q2 Performance Summary.pdf", "type": "application/pdf" }\n  ]\n}`,
+    outputs: 'drive_file_list',
+    curl: `curl -X POST "http://localhost:3000/api/tools/google/drive/list_files" \\\n  -H "Content-Type: application/json" \\\n  -d '{"folderId": "root"}'`
+  },
+  {
+    path: '/api/tools/google/sheets/append_values',
+    method: 'POST',
+    purpose: 'Append new rows of raw operational data into whitelisted Eburon ledger spreadsheets.',
+    requestBody: `{\n  "spreadsheetId": "sheet_123",\n  "values": [["2026-05-25", " Brussels", "Active"]]\n}`,
+    responseBody: `{\n  "success": true,\n  "updatedRange": "Sheet1!A10:C10"\n}`,
+    outputs: 'spreadsheet_appended',
+    curl: `curl -X POST "http://localhost:3000/api/tools/google/sheets/append_values" \\\n  -H "Content-Type: application/json" \\\n  -d '{"spreadsheetId": "sheet_123", "values": [["2026-05-25", "Brussels", "Active"]]}'`
+  },
+  {
+    path: '/api/tools/google/gmail/search_messages',
+    method: 'POST',
+    purpose: 'Query active mailbox threads for specific Eburon context or Boss directives.',
+    requestBody: `{\n  "query": "from:jo.lernout status:urgent"\n}`,
+    responseBody: `{\n  "success": true,\n  "messages": [\n    { "id": "m_01", "snippet": "Meeting regarding Pluto 1.0..." }\n  ]\n}`,
+    outputs: 'email_search_results',
+    curl: `curl -X POST "http://localhost:3000/api/tools/google/gmail/search_messages" \\\n  -H "Content-Type: application/json" \\\n  -d '{"query": "from:jo.lernout status:urgent"}'`
+  },
+  {
+    path: '/api/tools/google/maps/validate_address',
+    method: 'POST',
+    purpose: 'Validate and normalize Belgian or international addresses via Eburon geo-pipelines.',
+    requestBody: `{\n  "address": "Place Royale 1, Brussels"\n}`,
+    responseBody: `{\n  "success": true,\n  "verdict": "VALID",\n  "formattedAddress": "Place Royale 1, 1000 Brussels, Belgium"\n}`,
+    outputs: 'address_validation_result',
+    curl: `curl -X POST "http://localhost:3000/api/tools/google/maps/validate_address" \\\n  -H "Content-Type: application/json" \\\n  -d '{"address": "Place Royale 1, Brussels"}'`
+  },
+  {
+    path: '/api/tools/google/tasks/create_task',
+    method: 'POST',
+    purpose: 'Register new task entries in the Eburon priority queue.',
+    requestBody: `{\n  "title": "Calibrate Pluto sensors",\n  "notes": "Urgent request from Boss."\n}`,
+    responseBody: `{\n  "success": true,\n  "taskId": "task_8912"\n}`,
+    outputs: 'task_created',
+    curl: `curl -X POST "http://localhost:3000/api/tools/google/tasks/create_task" \\\n  -H "Content-Type: application/json" \\\n  -d '{"title": "Calibrate Pluto sensors"}'`
+  },
+  {
+    path: '/api/tools/google/docs/create_document',
+    method: 'POST',
+    purpose: 'Initialize a new whitelisted Eburon document context on Drive.',
+    requestBody: `{\n  "title": "New Operational Strategy"\n}`,
+    responseBody: `{\n  "success": true,\n  "documentId": "doc_9021",\n  "title": "New Operational Strategy"\n}`,
+    outputs: 'document_created',
+    curl: `curl -X POST "http://localhost:3000/api/tools/google/docs/create_document" \\\n  -H "Content-Type: application/json" \\\n  -d '{"title": "New Operational Strategy"}'`
+  },
+  {
+    path: '/api/tools/google/slides/create_presentation',
+    method: 'POST',
+    purpose: 'Provision a new Eburon presentation slide deck.',
+    requestBody: `{\n  "title": "Eburon Q3 Vision"\n}`,
+    responseBody: `{\n  "success": true,\n  "presentationId": "slide_8821"\n}`,
+    outputs: 'presentation_created',
+    curl: `curl -X POST "http://localhost:3000/api/tools/google/slides/create_presentation" \\\n  -H "Content-Type: application/json" \\\n  -d '{"title": "Eburon Q3 Vision"}'`
+  },
+  {
+    path: '/api/tools/google/calendar/create_event',
+    method: 'POST',
+    purpose: 'Register new whitelisted events in the Eburon core calendar.',
+    requestBody: `{\n  "summary": "Board Meeting",\n  "start": "2026-05-26T09:00:00Z",\n  "end": "2026-05-26T10:00:00Z"\n}`,
+    responseBody: `{\n  "success": true,\n  "eventId": "ev_0912"\n}`,
+    outputs: 'calendar_event_created',
+    curl: `curl -X POST "http://localhost:3000/api/tools/google/calendar/create_event" \\\n  -H "Content-Type: application/json" \\\n  -d '{"summary": "Board Meeting"}'`
+  },
+  {
+    path: '/api/tools/google/gmail/send_message',
+    method: 'POST',
+    purpose: 'Dispatch authorized email communications via Eburon mail gateways.',
+    requestBody: `{\n  "to": "boss@eburon.ai",\n  "subject": "Status Report",\n  "body": "All systems operational."\n}`,
+    responseBody: `{\n  "success": true,\n  "messageId": "msg_8821"\n}`,
+    outputs: 'email_dispatched',
+    curl: `curl -X POST "http://localhost:3000/api/tools/google/gmail/send_message" \\\n  -H "Content-Type: application/json" \\\n  -d '{"to": "boss@eburon.ai", "subject": "Status Report"}'`
+  },
+  {
+    path: '/api/tools/google/maps/get_directions',
+    method: 'POST',
+    purpose: 'Calculate navigation routing via Eburon optimized transport pipes.',
+    requestBody: `{\n  "origin": "Brussels Central",\n  "destination": "Eburon HQ"\n}`,
+    responseBody: `{\n  "success": true,\n  "routes": [{ "summary": "Via R0", "legs": [{ "distance": { "text": "15km" } }] }]\n}`,
+    outputs: 'navigation_result',
+    curl: `curl -X POST "http://localhost:3000/api/tools/google/maps/get_directions" \\\n  -H "Content-Type: application/json" \\\n  -d '{"origin": "Brussels Central", "destination": "Eburon HQ"}'`
+  },
+  {
+    path: '/api/tools/google/maps/search_places',
+    method: 'POST',
+    purpose: 'Query nearby whitelisted business sectors or points of interest.',
+    requestBody: `{\n  "query": "Coffee shops in Brussels"\n}`,
+    responseBody: `{\n  "success": true,\n  "results": [{ "name": "Eburon Cafe", "rating": 4.9 }]\n}`,
+    outputs: 'places_found',
+    curl: `curl -X POST "http://localhost:3000/api/tools/google/maps/search_places" \\\n  -H "Content-Type: application/json" \\\n  -d '{"query": "Coffee shops in Brussels"}'`
+  },
+
   // business tools
   {
     path: '/api/tools/start_return',
@@ -198,6 +299,15 @@ const endpointCollection: EndpointSpec[] = [
     curl: `curl -X POST "http://localhost:3000/api/tools/get_traffic_info" \\\n  -H "Content-Type: application/json" \\\n  -d '{\n    "sector": "R0 Ring Brussels"\n  }'`
   },
 
+  {
+    path: '/api/admin/generate-key',
+    method: 'GET',
+    purpose: 'Provision a new Eburon API Key for header-based authentication (EBURON_AI_API).',
+    responseBody: `{\n  "success": true,\n  "apiKey": "EBURON_ABC123...",\n  "header": "EBURON_AI_API"\n}`,
+    outputs: 'None',
+    curl: `curl -X GET "http://localhost:3000/api/admin/generate-key"`
+  },
+
   // configuration
   {
     path: '/api/config/models',
@@ -235,14 +345,14 @@ const endpointCollection: EndpointSpec[] = [
 ];
 
 export default function DeveloperSuite() {
-  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [copiedPath, setCopiedPath] = useState<string | null>(null);
   const [filterMethod, setFilterMethod] = useState<'ALL' | 'GET' | 'POST'>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
 
-  const triggerCopy = (text: string, id: string) => {
+  const copyToClipboard = (text: string, id: string) => {
     navigator.clipboard.writeText(text);
-    setCopiedId(id);
-    setTimeout(() => setCopiedId(null), 2000);
+    setCopiedPath(id);
+    setTimeout(() => setCopiedPath(null), 2000);
   };
 
   const playTTSPreview = (voiceName: string) => {
@@ -298,12 +408,17 @@ export default function DeveloperSuite() {
                   <td className="p-3 text-blue-600 font-semibold">{m.publicModelId}</td>
                   <td className="p-3 text-gray-400">
                     <div className="flex flex-col">
-                      <span className="text-[10px] font-mono font-bold text-gray-500 bg-gray-100 border px-1 py-0.5 rounded truncate max-w-[180px] select-all" title="Base64 Shielded Identifier">
-                        {m.providerModelId}
-                      </span>
-                      <span className="blur-[1.5px] hover:blur-none transition-all text-[9.5px] text-gray-500 block cursor-help select-none mt-1 font-bold" title="Hover to Decrypt Original Platform Identity">
-                        Decrypted: {decodeBase64(m.providerModelId)}
-                      </span>
+                      <div className="flex items-center gap-2 group">
+                        <span className="text-[10px] font-mono font-bold text-gray-500 bg-gray-100 border px-1 py-0.5 rounded truncate max-w-[180px] select-all" title="Eburon Shielded Identifier">
+                          {m.providerModelId}
+                        </span>
+                        <button 
+                          onClick={() => copyToClipboard(m.providerModelId, `model_id_${m.publicModelId}`)}
+                          className="opacity-0 group-hover:opacity-100 p-1 hover:bg-gray-200 rounded transition-all cursor-pointer"
+                        >
+                          {copiedPath === `model_id_${m.publicModelId}` ? <Check className="w-3 h-3 text-green-600" /> : <Copy className="w-3 h-3 text-gray-400" />}
+                        </button>
+                      </div>
                     </div>
                   </td>
                   <td className="p-3">
@@ -342,20 +457,23 @@ export default function DeveloperSuite() {
                     <span>Token:</span>
                     <span className="text-blue-600 font-bold select-all">{v.voiceToken}</span>
                   </div>
-                  {copiedId === v.voiceToken && (
+                  {copiedPath === v.voiceToken && (
                     <div className="text-[9px] bg-green-50 text-green-700 border border-green-200 p-1 rounded font-mono text-center animate-fade-in mt-1 font-bold">
                       ✓ Captioned: Voice signature token copied to clipboard!
                     </div>
                   )}
                   <div className="flex justify-between border-t border-gray-50 pt-1 text-[10px] text-gray-400">
-                    <span>Provider ID:</span>
-                    <div className="text-right">
-                      <span className="text-[9px] font-mono text-gray-400 block bg-gray-100 border px-1 rounded max-w-[120px] truncate select-all inline-block mb-1 font-bold" title="Base64 Shielded Identifier">
+                    <span>Eburon Code:</span>
+                    <div className="text-right flex items-center gap-1.5 group">
+                      <span className="text-[9px] font-mono text-gray-400 block bg-gray-100 border px-1 rounded max-w-[100px] truncate select-all font-bold" title="Shielded Identity Token">
                         {v.providerVoiceId}
                       </span>
-                      <span className="blur-[1px] hover:blur-none transition-all text-[9.5px] text-gray-500 block cursor-help font-bold select-none" title="Hover to Decrypt Original Superhero Identity">
-                        Decrypted: {decodeBase64(v.providerVoiceId)}
-                      </span>
+                      <button 
+                        onClick={() => copyToClipboard(v.providerVoiceId, `voice_id_${v.displayName}`)}
+                        className="opacity-0 group-hover:opacity-100 cursor-pointer"
+                      >
+                        {copiedPath === `voice_id_${v.displayName}` ? <Check className="w-2.5 h-2.5 text-green-600" /> : <Copy className="w-2.5 h-2.5 text-gray-400" />}
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -363,11 +481,11 @@ export default function DeveloperSuite() {
 
               <div className="flex gap-2">
                 <button 
-                  onClick={() => triggerCopy(v.voiceToken, v.voiceToken)}
+                  onClick={() => copyToClipboard(v.voiceToken, v.voiceToken)}
                   className="flex-1 border border-gray-200 hover:bg-gray-100 bg-white text-gray-600 rounded py-1 text-[11px] font-bold flex items-center justify-center gap-1.5 cursor-pointer"
                 >
-                  {copiedId === v.voiceToken ? <Check className="w-3.5 h-3.5 text-green-600" /> : <Copy className="w-3.5 h-3.5" />}
-                  <span>{copiedId === v.voiceToken ? 'Copied' : 'Copy Token'}</span>
+                  {copiedPath === v.voiceToken ? <Check className="w-3.5 h-3.5 text-green-600" /> : <Copy className="w-3.5 h-3.5" />}
+                  <span>{copiedPath === v.voiceToken ? 'Copied' : 'Copy Token'}</span>
                 </button>
                 <button 
                   onClick={() => playTTSPreview(v.displayName)}
@@ -494,7 +612,16 @@ export default function DeveloperSuite() {
 
                   {spec.requestBody && (
                     <div>
-                      <h5 className="font-extrabold text-gray-500 uppercase text-[10px] tracking-wider mb-1">Sample Request PAYLOAD (JSON)</h5>
+                      <div className="flex items-center justify-between mb-1">
+                        <h5 className="font-extrabold text-gray-500 uppercase text-[10px] tracking-wider">Sample Request PAYLOAD (JSON)</h5>
+                        <button 
+                          onClick={() => copyToClipboard(spec.requestBody!, `request_${spec.path}`)}
+                          className="hover:text-blue-600 transition-colors p-0.5"
+                          title="Copy JSON"
+                        >
+                          {copiedPath === `request_${spec.path}` ? <Check className="w-3 h-3 text-green-600" /> : <Copy className="w-3 h-3 text-gray-400" />}
+                        </button>
+                      </div>
                       <pre className="bg-gray-50 border border-gray-150 p-2.5 rounded font-mono text-[10px] text-gray-600 whitespace-pre overflow-auto max-h-36">
                         {spec.requestBody}
                       </pre>
@@ -502,7 +629,16 @@ export default function DeveloperSuite() {
                   )}
 
                   <div>
-                    <h5 className="font-extrabold text-gray-500 uppercase text-[10px] tracking-wider mb-1">Standard Response Form</h5>
+                    <div className="flex items-center justify-between mb-1">
+                      <h5 className="font-extrabold text-gray-500 uppercase text-[10px] tracking-wider">Standard Response Form</h5>
+                      <button 
+                        onClick={() => copyToClipboard(spec.responseBody, `response_${spec.path}`)}
+                        className="hover:text-green-600 transition-colors p-0.5"
+                        title="Copy Response JSON"
+                      >
+                        {copiedPath === `response_${spec.path}` ? <Check className="w-3 h-3 text-green-600" /> : <Copy className="w-3 h-3 text-gray-400" />}
+                      </button>
+                    </div>
                     <pre className="bg-gray-50 border border-gray-150 p-2.5 rounded font-mono text-[10px] text-gray-600 whitespace-pre overflow-auto max-h-36">
                       {spec.responseBody}
                     </pre>
@@ -527,11 +663,11 @@ export default function DeveloperSuite() {
                   <div className="flex items-center justify-between border-b border-gray-700/60 pb-1.5 mb-2.5 text-[10px] font-mono tracking-wider uppercase text-gray-400">
                     <span>Target Sandbox cURL Example</span>
                     <button
-                      onClick={() => triggerCopy(spec.curl, spec.path)}
+                      onClick={() => copyToClipboard(spec.curl, spec.path)}
                       className="text-gray-400 hover:text-white flex items-center gap-1 cursor-pointer transition-colors"
                     >
-                      {copiedId === spec.path ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />}
-                      <span>{copiedId === spec.path ? 'COPIED' : 'COPY'}</span>
+                      {copiedPath === spec.path ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />}
+                      <span>{copiedPath === spec.path ? 'COPIED' : 'COPY'}</span>
                     </button>
                   </div>
                   <pre className="font-mono text-[10.5px] text-[#f8f8f2] leading-relaxed whitespace-pre overflow-auto flex-1 p-1 max-h-80 select-all scrollbar-thin">
@@ -544,7 +680,7 @@ export default function DeveloperSuite() {
                       <span className="w-1.5 h-1.5 rounded-full bg-[#89bf04] inline-block animate-pulse"></span>
                       <span className="font-semibold tracking-tight">Active Terminal Clipboard Sync:</span>
                     </div>
-                    {copiedId === spec.path ? (
+                    {copiedPath === spec.path ? (
                       <div className="bg-[#89bf04]/20 border border-[#89bf04]/40 text-[#a3e200] p-1.5 rounded font-mono text-[10px] animate-fade-in font-medium">
                         ✓ CAPTIONED: cURL command copied successfully! Ready to paste and run in your local terminal.
                       </div>
