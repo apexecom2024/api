@@ -25,7 +25,7 @@ const endpointCollection: EndpointSpec[] = [
     responseBody: `{\n  "success": true,\n  "sessionId": "session_8921df3a",\n  "message": "Connected successfully to Eburon Live Audio Pluto 1.0 pipeline"\n}`,
     streaming: 'None',
     outputs: 'Error Notification, Model Content',
-    curl: `curl -X POST "http://localhost:3000/api/live/connect" \\\n  -H "Content-Type: application/json" \\\n  -d '{\n    "model": "pluto-1.0-live",\n    "voiceToken": "WmVwaHly",\n    "responseModalities": ["audio"],\n    "inputAudioTranscription": true,\n    "outputAudioTranscription": true\n  }'`
+    curl: `curl -X POST "http://localhost:3000/api/live/connect" \\\n  -H "Content-Type: application/json" \\\n  -H "EBURON_AI_API: YOUR_API_KEY" \\\n  -d '{\n    "model": "pluto-1.0-live",\n    "voiceToken": "WmVwaHly",\n    "responseModalities": ["audio"],\n    "inputAudioTranscription": true,\n    "outputAudioTranscription": true\n  }'`
   },
   {
     path: '/api/live/disconnect',
@@ -35,7 +35,7 @@ const endpointCollection: EndpointSpec[] = [
     responseBody: `{\n  "success": true,\n  "message": "Session context disconnected"\n}`,
     streaming: 'None',
     outputs: 'None',
-    curl: `curl -X POST "http://localhost:3000/api/live/disconnect" \\\n  -H "Content-Type: application/json" \\\n  -d '{\n    "sessionId": "session_123"\n  }'`
+    curl: `curl -X POST "http://localhost:3000/api/live/disconnect" \\\n  -H "Content-Type: application/json" \\\n  -H "EBURON_AI_API: YOUR_API_KEY" \\\n  -d '{\n    "sessionId": "session_123"\n  }'`
   },
   {
     path: '/api/live/send-text',
@@ -45,7 +45,7 @@ const endpointCollection: EndpointSpec[] = [
     responseBody: `{\n  "status": "queued",\n  "turnId": "turn_ebd93"\n}`,
     streaming: 'Asynchronous text/audio stream response',
     outputs: 'Text Output, Output Transcript, Audio Output',
-    curl: `curl -X POST "http://localhost:3000/api/live/send-text" \\\n  -H "Content-Type: application/json" \\\n  -d '{\n    "sessionId": "session_123",\n    "text": "Hello Pluto, introduce yourself as an Eburon AI voice agent.",\n    "turnComplete": true\n  }'`
+    curl: `curl -X POST "http://localhost:3000/api/live/send-text" \\\n  -H "Content-Type: application/json" \\\n  -H "EBURON_AI_API: YOUR_API_KEY" \\\n  -d '{\n    "sessionId": "session_123",\n    "text": "Hello Pluto, introduce yourself as an Eburon AI voice agent.",\n    "turnComplete": true\n  }'`
   },
   {
     path: '/api/live/send-audio-chunk',
@@ -55,7 +55,7 @@ const endpointCollection: EndpointSpec[] = [
     responseBody: `{\n  "success": true,\n  "bytesReceived": 10240\n}`,
     streaming: 'Direct acoustic ingestion stream parameters',
     outputs: 'Input Transcript',
-    curl: `curl -X POST "http://localhost:3000/api/live/send-audio-chunk" \\\n  -H "Content-Type: application/json" \\\n  -d '{\n    "sessionId": "session_123",\n    "mimeType": "audio/pcm;rate=16000",\n    "audioBase64": "BASE64_PCM_AUDIO_CHUNK"\n  }'`
+    curl: `curl -X POST "http://localhost:3000/api/live/send-audio-chunk" \\\n  -H "Content-Type: application/json" \\\n  -H "EBURON_AI_API: YOUR_API_KEY" \\\n  -d '{\n    "sessionId": "session_123",\n    "mimeType": "audio/pcm;rate=16000",\n    "audioBase64": "BASE64_PCM_AUDIO_CHUNK"\n  }'`
   },
   {
     path: '/api/live/tool-response',
@@ -65,7 +65,7 @@ const endpointCollection: EndpointSpec[] = [
     responseBody: `{\n  "status": "acknowledged"\n}`,
     streaming: 'Triggers matching turns synthesis',
     outputs: 'Tool Response',
-    curl: `curl -X POST "http://localhost:3000/api/live/tool-response" \\\n  -H "Content-Type: application/json" \\\n  -d '{\n    "sessionId": "session_123",\n    "callId": "call_abc123",\n    "response": {\n      "status": "transit",\n      "eta": "2 days"\n    }\n  }'`
+    curl: `curl -X POST "http://localhost:3000/api/live/tool-response" \\\n  -H "Content-Type: application/json" \\\n  -H "EBURON_AI_API: YOUR_API_KEY" \\\n  -d '{\n    "sessionId": "session_123",\n    "callId": "call_abc123",\n    "response": {\n      "status": "transit",\n      "eta": "2 days"\n    }\n  }'`
   },
   {
     path: '/api/live/events',
@@ -74,7 +74,7 @@ const endpointCollection: EndpointSpec[] = [
     responseBody: `text/event-stream\n\nevent: model_content\\ndata: {"message": "Active SSE stream connect"}\\n\\nevent: turn_complete\\ndata: {"timestamp": 1716616010029}`,
     streaming: 'Continuous Server Sent Events stream channel',
     outputs: 'input_transcript, output_transcript, tool_call, error, turn_complete',
-    curl: `curl -N "http://localhost:3000/api/live/events?sessionId=session_123"`
+    curl: `curl -N "http://localhost:3000/api/live/events?sessionId=session_123" -H "EBURON_AI_API: YOUR_API_KEY"`
   },
   {
     path: '/api/live/audio-stream',
@@ -83,7 +83,7 @@ const endpointCollection: EndpointSpec[] = [
     responseBody: `binary/octet-stream (raw audio byte sequences)`,
     streaming: 'Real-time binary chunk audio playback flow',
     outputs: 'audio_stream',
-    curl: `curl -N "http://localhost:3000/api/live/audio-stream?sessionId=session_123"`
+    curl: `curl -N "http://localhost:3000/api/live/audio-stream?sessionId=session_123" -H "EBURON_AI_API: YOUR_API_KEY"`
   },
   {
     path: '/api/live/transcripts',
@@ -92,7 +92,7 @@ const endpointCollection: EndpointSpec[] = [
     responseBody: `[\n  { "role": "user", "content": "Maneer, start Eburon test.", "timestamp": 1716616010000 },\n  { "role": "assistant", "content": "Understood, connecting to Skyblade registry.", "timestamp": 1716616012000 }\n]`,
     streaming: 'Static historic retrieval JSON structure',
     outputs: 'input_transcript, output_transcript',
-    curl: `curl -X GET "http://localhost:3000/api/live/transcripts?sessionId=session_123"`
+    curl: `curl -X GET "http://localhost:3000/api/live/transcripts?sessionId=session_123" -H "EBURON_AI_API: YOUR_API_KEY"`
   },
   {
     path: '/api/live/video-stream',
@@ -102,7 +102,7 @@ const endpointCollection: EndpointSpec[] = [
     responseBody: `{\n  "success": true,\n  "endpoint": "webrtc://live.eburon.ai:3000/live/session_123",\n  "authToken": "webrtc_stream_auth_token_9021a",\n  "message": "Eburon Live Video Ingestion pipeline channel initialized"\n}`,
     streaming: 'Real-time video/h264 media stream channel',
     outputs: 'video_websdk_stream',
-    curl: `curl -X POST "http://localhost:3000/api/live/video-stream" \\\n  -H "Content-Type: application/json" \\\n  -d '{\n    "sessionId": "session_123",\n    "streamId": "vs_8932a",\n    "resolution": "720p",\n    "fps": 30,\n    "codec": "VP8"\n  }'`
+    curl: `curl -X POST "http://localhost:3000/api/live/video-stream" \\\n  -H "Content-Type: application/json" \\\n  -H "EBURON_AI_API: YOUR_API_KEY" \\\n  -d '{\n    "sessionId": "session_123",\n    "streamId": "vs_8932a",\n    "resolution": "720p",\n    "fps": 30,\n    "codec": "VP8"\n  }'`
   },
   {
     path: '/api/live/screen-share',
@@ -112,108 +112,108 @@ const endpointCollection: EndpointSpec[] = [
     responseBody: `{\n  "success": true,\n  "shareId": "screen_4812a",\n  "status": "sharing",\n  "frameBufferSize": 204800,\n  "instructions": "Send frames sequentially as Base64 JPEG chunks via WebSocket or REST chunk pipelines."\n}`,
     streaming: 'Asynchronous periodic viewport frames channel',
     outputs: 'screenshare_active',
-    curl: `curl -X POST "http://localhost:3000/api/live/screen-share" \\\n  -H "Content-Type: application/json" \\\n  -d '{\n    "sessionId": "session_123",\n    "source": "entire_screen",\n    "fps": 5,\n    "compressRatio": 0.8\n  }'`
+    curl: `curl -X POST "http://localhost:3000/api/live/screen-share" \\\n  -H "Content-Type: application/json" \\\n  -H "EBURON_AI_API: YOUR_API_KEY" \\\n  -d '{\n    "sessionId": "session_123",\n    "source": "entire_screen",\n    "fps": 5,\n    "compressRatio": 0.8\n  }'`
   },
 
-  // Google Service Tools
+  // Eburon Workspace Tools
   {
-    path: '/api/tools/google/drive/list_files',
+    path: '/api/tools/eburon/drive/list_files',
     method: 'POST',
     purpose: 'List files and directories from the Eburon connected Drive storage volumes.',
     requestBody: `{\n  "folderId": "root"\n}`,
     responseBody: `{\n  "success": true,\n  "files": [\n    { "id": "file_901a", "name": "Q2 Performance Summary.pdf", "type": "application/pdf" }\n  ]\n}`,
     outputs: 'drive_file_list',
-    curl: `curl -X POST "http://localhost:3000/api/tools/google/drive/list_files" \\\n  -H "Content-Type: application/json" \\\n  -d '{"folderId": "root"}'`
+    curl: `curl -X POST "http://localhost:3000/api/tools/eburon/drive/list_files" \\\n  -H "Content-Type: application/json" \\\n  -H "EBURON_AI_API: YOUR_API_KEY" \\\n  -d '{"folderId": "root"}'`
   },
   {
-    path: '/api/tools/google/sheets/append_values',
+    path: '/api/tools/eburon/sheets/append_values',
     method: 'POST',
     purpose: 'Append new rows of raw operational data into whitelisted Eburon ledger spreadsheets.',
     requestBody: `{\n  "spreadsheetId": "sheet_123",\n  "values": [["2026-05-25", " Brussels", "Active"]]\n}`,
     responseBody: `{\n  "success": true,\n  "updatedRange": "Sheet1!A10:C10"\n}`,
     outputs: 'spreadsheet_appended',
-    curl: `curl -X POST "http://localhost:3000/api/tools/google/sheets/append_values" \\\n  -H "Content-Type: application/json" \\\n  -d '{"spreadsheetId": "sheet_123", "values": [["2026-05-25", "Brussels", "Active"]]}'`
+    curl: `curl -X POST "http://localhost:3000/api/tools/eburon/sheets/append_values" \\\n  -H "Content-Type: application/json" \\\n  -H "EBURON_AI_API: YOUR_API_KEY" \\\n  -d '{"spreadsheetId": "sheet_123", "values": [["2026-05-25", "Brussels", "Active"]]}'`
   },
   {
-    path: '/api/tools/google/gmail/search_messages',
+    path: '/api/tools/eburon/gmail/search_messages',
     method: 'POST',
     purpose: 'Query active mailbox threads for specific Eburon context or Boss directives.',
     requestBody: `{\n  "query": "from:jo.lernout status:urgent"\n}`,
     responseBody: `{\n  "success": true,\n  "messages": [\n    { "id": "m_01", "snippet": "Meeting regarding Pluto 1.0..." }\n  ]\n}`,
     outputs: 'email_search_results',
-    curl: `curl -X POST "http://localhost:3000/api/tools/google/gmail/search_messages" \\\n  -H "Content-Type: application/json" \\\n  -d '{"query": "from:jo.lernout status:urgent"}'`
+    curl: `curl -X POST "http://localhost:3000/api/tools/eburon/gmail/search_messages" \\\n  -H "Content-Type: application/json" \\\n  -H "EBURON_AI_API: YOUR_API_KEY" \\\n  -d '{"query": "from:jo.lernout status:urgent"}'`
   },
   {
-    path: '/api/tools/google/maps/validate_address',
+    path: '/api/tools/eburon/maps/validate_address',
     method: 'POST',
     purpose: 'Validate and normalize Belgian or international addresses via Eburon geo-pipelines.',
     requestBody: `{\n  "address": "Place Royale 1, Brussels"\n}`,
     responseBody: `{\n  "success": true,\n  "verdict": "VALID",\n  "formattedAddress": "Place Royale 1, 1000 Brussels, Belgium"\n}`,
     outputs: 'address_validation_result',
-    curl: `curl -X POST "http://localhost:3000/api/tools/google/maps/validate_address" \\\n  -H "Content-Type: application/json" \\\n  -d '{"address": "Place Royale 1, Brussels"}'`
+    curl: `curl -X POST "http://localhost:3000/api/tools/eburon/maps/validate_address" \\\n  -H "Content-Type: application/json" \\\n  -H "EBURON_AI_API: YOUR_API_KEY" \\\n  -d '{"address": "Place Royale 1, Brussels"}'`
   },
   {
-    path: '/api/tools/google/tasks/create_task',
+    path: '/api/tools/eburon/tasks/create_task',
     method: 'POST',
     purpose: 'Register new task entries in the Eburon priority queue.',
     requestBody: `{\n  "title": "Calibrate Pluto sensors",\n  "notes": "Urgent request from Boss."\n}`,
     responseBody: `{\n  "success": true,\n  "taskId": "task_8912"\n}`,
     outputs: 'task_created',
-    curl: `curl -X POST "http://localhost:3000/api/tools/google/tasks/create_task" \\\n  -H "Content-Type: application/json" \\\n  -d '{"title": "Calibrate Pluto sensors"}'`
+    curl: `curl -X POST "http://localhost:3000/api/tools/eburon/tasks/create_task" \\\n  -H "Content-Type: application/json" \\\n  -H "EBURON_AI_API: YOUR_API_KEY" \\\n  -d '{"title": "Calibrate Pluto sensors"}'`
   },
   {
-    path: '/api/tools/google/docs/create_document',
+    path: '/api/tools/eburon/docs/create_document',
     method: 'POST',
     purpose: 'Initialize a new whitelisted Eburon document context on Drive.',
     requestBody: `{\n  "title": "New Operational Strategy"\n}`,
     responseBody: `{\n  "success": true,\n  "documentId": "doc_9021",\n  "title": "New Operational Strategy"\n}`,
     outputs: 'document_created',
-    curl: `curl -X POST "http://localhost:3000/api/tools/google/docs/create_document" \\\n  -H "Content-Type: application/json" \\\n  -d '{"title": "New Operational Strategy"}'`
+    curl: `curl -X POST "http://localhost:3000/api/tools/eburon/docs/create_document" \\\n  -H "Content-Type: application/json" \\\n  -H "EBURON_AI_API: YOUR_API_KEY" \\\n  -d '{"title": "New Operational Strategy"}'`
   },
   {
-    path: '/api/tools/google/slides/create_presentation',
+    path: '/api/tools/eburon/slides/create_presentation',
     method: 'POST',
     purpose: 'Provision a new Eburon presentation slide deck.',
     requestBody: `{\n  "title": "Eburon Q3 Vision"\n}`,
     responseBody: `{\n  "success": true,\n  "presentationId": "slide_8821"\n}`,
     outputs: 'presentation_created',
-    curl: `curl -X POST "http://localhost:3000/api/tools/google/slides/create_presentation" \\\n  -H "Content-Type: application/json" \\\n  -d '{"title": "Eburon Q3 Vision"}'`
+    curl: `curl -X POST "http://localhost:3000/api/tools/eburon/slides/create_presentation" \\\n  -H "Content-Type: application/json" \\\n  -H "EBURON_AI_API: YOUR_API_KEY" \\\n  -d '{"title": "Eburon Q3 Vision"}'`
   },
   {
-    path: '/api/tools/google/calendar/create_event',
+    path: '/api/tools/eburon/calendar/create_event',
     method: 'POST',
     purpose: 'Register new whitelisted events in the Eburon core calendar.',
     requestBody: `{\n  "summary": "Board Meeting",\n  "start": "2026-05-26T09:00:00Z",\n  "end": "2026-05-26T10:00:00Z"\n}`,
     responseBody: `{\n  "success": true,\n  "eventId": "ev_0912"\n}`,
     outputs: 'calendar_event_created',
-    curl: `curl -X POST "http://localhost:3000/api/tools/google/calendar/create_event" \\\n  -H "Content-Type: application/json" \\\n  -d '{"summary": "Board Meeting"}'`
+    curl: `curl -X POST "http://localhost:3000/api/tools/eburon/calendar/create_event" \\\n  -H "Content-Type: application/json" \\\n  -H "EBURON_AI_API: YOUR_API_KEY" \\\n  -d '{"summary": "Board Meeting"}'`
   },
   {
-    path: '/api/tools/google/gmail/send_message',
+    path: '/api/tools/eburon/gmail/send_message',
     method: 'POST',
     purpose: 'Dispatch authorized email communications via Eburon mail gateways.',
     requestBody: `{\n  "to": "boss@eburon.ai",\n  "subject": "Status Report",\n  "body": "All systems operational."\n}`,
     responseBody: `{\n  "success": true,\n  "messageId": "msg_8821"\n}`,
     outputs: 'email_dispatched',
-    curl: `curl -X POST "http://localhost:3000/api/tools/google/gmail/send_message" \\\n  -H "Content-Type: application/json" \\\n  -d '{"to": "boss@eburon.ai", "subject": "Status Report"}'`
+    curl: `curl -X POST "http://localhost:3000/api/tools/eburon/gmail/send_message" \\\n  -H "Content-Type: application/json" \\\n  -H "EBURON_AI_API: YOUR_API_KEY" \\\n  -d '{"to": "boss@eburon.ai", "subject": "Status Report"}'`
   },
   {
-    path: '/api/tools/google/maps/get_directions',
+    path: '/api/tools/eburon/maps/get_directions',
     method: 'POST',
     purpose: 'Calculate navigation routing via Eburon optimized transport pipes.',
     requestBody: `{\n  "origin": "Brussels Central",\n  "destination": "Eburon HQ"\n}`,
     responseBody: `{\n  "success": true,\n  "routes": [{ "summary": "Via R0", "legs": [{ "distance": { "text": "15km" } }] }]\n}`,
     outputs: 'navigation_result',
-    curl: `curl -X POST "http://localhost:3000/api/tools/google/maps/get_directions" \\\n  -H "Content-Type: application/json" \\\n  -d '{"origin": "Brussels Central", "destination": "Eburon HQ"}'`
+    curl: `curl -X POST "http://localhost:3000/api/tools/eburon/maps/get_directions" \\\n  -H "Content-Type: application/json" \\\n  -H "EBURON_AI_API: YOUR_API_KEY" \\\n  -d '{"origin": "Brussels Central", "destination": "Eburon HQ"}'`
   },
   {
-    path: '/api/tools/google/maps/search_places',
+    path: '/api/tools/eburon/maps/search_places',
     method: 'POST',
     purpose: 'Query nearby whitelisted business sectors or points of interest.',
     requestBody: `{\n  "query": "Coffee shops in Brussels"\n}`,
     responseBody: `{\n  "success": true,\n  "results": [{ "name": "Eburon Cafe", "rating": 4.9 }]\n}`,
     outputs: 'places_found',
-    curl: `curl -X POST "http://localhost:3000/api/tools/google/maps/search_places" \\\n  -H "Content-Type: application/json" \\\n  -d '{"query": "Coffee shops in Brussels"}'`
+    curl: `curl -X POST "http://localhost:3000/api/tools/eburon/maps/search_places" \\\n  -H "Content-Type: application/json" \\\n  -H "EBURON_AI_API: YOUR_API_KEY" \\\n  -d '{"query": "Coffee shops in Brussels"}'`
   },
 
   // business tools
@@ -224,7 +224,7 @@ const endpointCollection: EndpointSpec[] = [
     requestBody: `{\n  "orderId": "100231",\n  "reason": "Wrong item delivered"\n}`,
     responseBody: `{\n  "success": true,\n  "returnSessionId": "ret_9831a20",\n  "instructions": "Drop cargo at Eburon local office"\n}`,
     outputs: 'return_request_started',
-    curl: `curl -X POST "http://localhost:3000/api/tools/start_return" \\\n  -H "Content-Type: application/json" \\\n  -d '{\n    "orderId": "100231",\n    "reason": "Wrong item delivered"\n  }'`
+    curl: `curl -X POST "http://localhost:3000/api/tools/start_return" \\\n  -H "Content-Type: application/json" \\\n  -H "EBURON_AI_API: YOUR_API_KEY" \\\n  -d '{\n    "orderId": "100231",\n    "reason": "Wrong item delivered"\n  }'`
   },
   {
     path: '/api/tools/get_order_status',
@@ -233,7 +233,7 @@ const endpointCollection: EndpointSpec[] = [
     requestBody: `{\n  "orderId": "100231"\n}`,
     responseBody: `{\n  "status": "Transit",\n  "eta": "2026-05-28"\n}`,
     outputs: 'order_status_result',
-    curl: `curl -X POST "http://localhost:3000/api/tools/get_order_status" \\\n  -H "Content-Type: application/json" \\\n  -d '{\n    "orderId": "100231"\n  }'`
+    curl: `curl -X POST "http://localhost:3000/api/tools/get_order_status" \\\n  -H "Content-Type: application/json" \\\n  -H "EBURON_AI_API: YOUR_API_KEY" \\\n  -d '{\n    "orderId": "100231"\n  }'`
   },
   {
     path: '/api/tools/speak_to_representative',
@@ -242,7 +242,7 @@ const endpointCollection: EndpointSpec[] = [
     requestBody: `{\n  "sessionId": "session_123"\n}`,
     responseBody: `{\n  "transferred": true,\n  "queuePosition": 2\n}`,
     outputs: 'representative_handoff',
-    curl: `curl -X POST "http://localhost:3000/api/tools/speak_to_representative" \\\n  -H "Content-Type: application/json" \\\n  -d '{\n    "sessionId": "session_123"\n  }'`
+    curl: `curl -X POST "http://localhost:3000/api/tools/speak_to_representative" \\\n  -H "Content-Type: application/json" \\\n  -H "EBURON_AI_API: YOUR_API_KEY" \\\n  -d '{\n    "sessionId": "session_123"\n  }'`
   },
   {
     path: '/api/tools/create_calendar_event',
@@ -251,7 +251,7 @@ const endpointCollection: EndpointSpec[] = [
     requestBody: `{\n  "title": "Eburon AI Briefing with Jo",\n  "startTime": "2026-05-26T10:00:00Z",\n  "endTime": "2026-05-26T11:00:00Z"\n}`,
     responseBody: `{\n  "success": true,\n  "eventId": "evt_0918b",\n  "formatted": "Created event Successfully."\n}`,
     outputs: 'calendar_event_created',
-    curl: `curl -X POST "http://localhost:3000/api/tools/create_calendar_event" \\\n  -H "Content-Type: application/json" \\\n  -d '{\n    "title": "Eburon AI Briefing with Jo",\n    "startTime": "2526-05-26T10:00:00Z",\n    "endTime": "2526-05-26T11:00:00Z"\n  }'`
+    curl: `curl -X POST "http://localhost:3000/api/tools/create_calendar_event" \\\n  -H "Content-Type: application/json" \\\n  -H "EBURON_AI_API: YOUR_API_KEY" \\\n  -d '{\n    "title": "Eburon AI Briefing with Jo",\n    "startTime": "2526-05-26T10:00:00Z",\n    "endTime": "2526-05-26T11:00:00Z"\n  }'`
   },
   {
     path: '/api/tools/send_email',
@@ -260,7 +260,7 @@ const endpointCollection: EndpointSpec[] = [
     requestBody: `{\n  "to": "boss@eburon.ai",\n  "subject": "Eburon active summary",\n  "body": "System calibrated."\n}`,
     responseBody: `{\n  "success": true,\n  "messageId": "msg_bc2931"\n}`,
     outputs: 'email_draft_or_sent',
-    curl: `curl -X POST "http://localhost:3000/api/tools/send_email" \\\n  -H "Content-Type: application/json" \\\n  -d '{\n    "to": "boss@eburon.ai",\n    "subject": "Eburon active summary",\n    "body": "System calibrated."\n  }'`
+    curl: `curl -X POST "http://localhost:3000/api/tools/send_email" \\\n  -H "Content-Type: application/json" \\\n  -H "EBURON_AI_API: YOUR_API_KEY" \\\n  -d '{\n    "to": "boss@eburon.ai",\n    "subject": "Eburon active summary",\n    "body": "System calibrated."\n  }'`
   },
   {
     path: '/api/tools/set_reminder',
@@ -269,7 +269,7 @@ const endpointCollection: EndpointSpec[] = [
     requestBody: `{\n  "time": "2026-05-25T18:00:00Z",\n  "task": "Review handoffs"\n}`,
     responseBody: `{\n  "success": true,\n  "reminderId": "rem_8921b"\n}`,
     outputs: 'reminder_created',
-    curl: `curl -X POST "http://localhost:3000/api/tools/set_reminder" \\\n  -H "Content-Type: application/json" \\\n  -d '{\n    "time": "2026-05-25T18:00:00Z",\n    "task": "Review handoffs"\n  }'`
+    curl: `curl -X POST "http://localhost:3000/api/tools/set_reminder" \\\n  -H "Content-Type: application/json" \\\n  -H "EBURON_AI_API: YOUR_API_KEY" \\\n  -d '{\n    "time": "2026-05-25T18:00:00Z",\n    "task": "Review handoffs"\n  }'`
   },
   {
     path: '/api/tools/find_route',
@@ -278,7 +278,7 @@ const endpointCollection: EndpointSpec[] = [
     requestBody: `{\n  "origin": "Brussels",\n  "destination": "Ypres"\n}`,
     responseBody: `{\n  "success": true,\n  "distance": "45.3 km",\n  "duration": "34 mins",\n  "steps": ["Depart origin", "Arrive destination"]\n}`,
     outputs: 'route_result',
-    curl: `curl -X POST "http://localhost:3000/api/tools/find_route" \\\n  -H "Content-Type: application/json" \\\n  -d '{\n    "origin": "Brussels",\n    "destination": "Ypres"\n  }'`
+    curl: `curl -X POST "http://localhost:3000/api/tools/find_route" \\\n  -H "Content-Type: application/json" \\\n  -H "EBURON_AI_API: YOUR_API_KEY" \\\n  -d '{\n    "origin": "Brussels",\n    "destination": "Ypres"\n  }'`
   },
   {
     path: '/api/tools/find_nearby_places',
@@ -287,7 +287,7 @@ const endpointCollection: EndpointSpec[] = [
     requestBody: `{\n  "location": "50.85,4.35",\n  "type": "office"\n}`,
     responseBody: `[\n  { "name": "Brussels Core Office", "distance": "120m" }\n]`,
     outputs: 'nearby_places_result',
-    curl: `curl -X POST "http://localhost:3000/api/tools/find_nearby_places" \\\n  -H "Content-Type: application/json" \\\n  -d '{\n    "location": "50.85,4.35",\n    "type": "office"\n  }'`
+    curl: `curl -X POST "http://localhost:3000/api/tools/find_nearby_places" \\\n  -H "Content-Type: application/json" \\\n  -H "EBURON_AI_API: YOUR_API_KEY" \\\n  -d '{\n    "location": "50.85,4.35",\n    "type": "office"\n  }'`
   },
   {
     path: '/api/tools/get_traffic_info',
@@ -296,7 +296,7 @@ const endpointCollection: EndpointSpec[] = [
     requestBody: `{\n  "sector": "R0 Ring Brussels"\n}`,
     responseBody: `{\n  "sector": "R0 Ring",\n  "congestionIndex": "Moderate",\n  "delayMinutes": 8\n}`,
     outputs: 'traffic_info_result',
-    curl: `curl -X POST "http://localhost:3000/api/tools/get_traffic_info" \\\n  -H "Content-Type: application/json" \\\n  -d '{\n    "sector": "R0 Ring Brussels"\n  }'`
+    curl: `curl -X POST "http://localhost:3000/api/tools/get_traffic_info" \\\n  -H "Content-Type: application/json" \\\n  -H "EBURON_AI_API: YOUR_API_KEY" \\\n  -d '{\n    "sector": "R0 Ring Brussels"\n  }'`
   },
 
   {
@@ -313,9 +313,9 @@ const endpointCollection: EndpointSpec[] = [
     path: '/api/config/models',
     method: 'GET',
     purpose: 'Retrieve public model entities whitelisted under active integration scopes.',
-    responseBody: `[\n  {\n    "publicName": "Pluto 1.0",\n    "publicModelId": "pluto-1.0-live",\n    "provider": "google-gemini-live-audio",\n    "status": "whitelisted"\n  }\n]`,
+    responseBody: `[\n  {\n    "publicName": "Pluto 1.0",\n    "publicModelId": "pluto-1.0-live",\n    "provider": "eburon-core-live",\n    "status": "whitelisted"\n  }\n]`,
     outputs: 'None',
-    curl: `curl -X GET "http://localhost:3000/api/config/models"`
+    curl: `curl -X GET "http://localhost:3000/api/config/models" -H "EBURON_AI_API: YOUR_API_KEY"`
   },
   {
     path: '/api/config/voices',
@@ -323,7 +323,7 @@ const endpointCollection: EndpointSpec[] = [
     purpose: 'Expose only frontend-safe superhero voice aliases with corresponding base64 tokens.',
     responseBody: `[\n  {\n    "displayName": "Skyblade",\n    "voiceToken": "WmVwaHly",\n    "enabled": true\n  }\n]`,
     outputs: 'None',
-    curl: `curl -X GET "http://localhost:3000/api/config/voices"`
+    curl: `curl -X GET "http://localhost:3000/api/config/voices" -H "EBURON_AI_API: YOUR_API_KEY"`
   },
   {
     path: '/api/config/system-prompt',
@@ -332,7 +332,7 @@ const endpointCollection: EndpointSpec[] = [
     requestBody: `{\n  "prompt": "You are a highly capable agent."\n}`,
     responseBody: `{\n  "status": "updated",\n  "prompt": "You are a highly capable agent."\n}`,
     outputs: 'None',
-    curl: `curl -X POST "http://localhost:3000/api/config/system-prompt" \\\n  -H "Content-Type: application/json" \\\n  -d '{\n    "prompt": "You are a highly capable agent."\n  }'`
+    curl: `curl -X POST "http://localhost:3000/api/config/system-prompt" \\\n  -H "Content-Type: application/json" \\\n  -H "EBURON_AI_API: YOUR_API_KEY" \\\n  -d '{\n    "prompt": "You are a highly capable agent."\n  }'`
   },
   {
     path: '/api/config/output-registry',
@@ -340,7 +340,7 @@ const endpointCollection: EndpointSpec[] = [
     purpose: 'Return deep details, label schemas, and sample properties for all 21 system signals.',
     responseBody: `[\n  {\n    "id": "audio_output",\n    "label": "Audio Output",\n    "description": "PCM audio generated by Pluto 1.0 Live.",\n    "transport": "stream",\n    "mimeType": "audio/pcm",\n    "sampleRate": 24000\n  }\n]`,
     outputs: 'None',
-    curl: `curl -X GET "http://localhost:3000/api/config/output-registry"`
+    curl: `curl -X GET "http://localhost:3000/api/config/output-registry" -H "EBURON_AI_API: YOUR_API_KEY"`
   }
 ];
 
@@ -380,6 +380,48 @@ export default function DeveloperSuite() {
   return (
     <div className="space-y-10 animate-fade-in text-[#3b4151]">
       
+      {/* 0. Governance & Access Provisioning */}
+      <section className="bg-gradient-to-br from-[#89bf04]/10 to-white rounded-xl border border-[#89bf04]/20 shadow-sm p-6 overflow-hidden relative group">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-[#89bf04]/5 rounded-full -mr-16 -mt-16 group-hover:scale-110 transition-transform duration-500"></div>
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="space-y-1.5 flex-1">
+            <div className="flex items-center gap-2">
+              <ShieldCheck className="w-6 h-6 text-[#89bf04]" />
+              <h2 className="text-xl font-extrabold tracking-tight text-gray-800 uppercase italic">Eburon Core Gateway - Auth Provisioning</h2>
+            </div>
+            <p className="text-xs text-gray-500 leading-relaxed font-medium">
+              Access to whitelisted Eburon Pluto 1.0 pipelines requires an authorized <span className="text-[#89bf04] font-bold">EBURON_AI_API</span> credential in the request headers. 
+              The sandbox automatically whitelists local terminal origins.
+            </p>
+          </div>
+          
+          <div className="flex flex-col gap-3 min-w-[280px]">
+            <div className="flex items-center justify-between bg-white border border-gray-200 rounded-lg p-2.5 shadow-xs">
+              <span className="text-[10px] font-mono text-gray-400 font-bold uppercase">Header:</span>
+              <div className="flex items-center gap-2">
+                <code className="text-[#89bf04] font-black text-xs">EBURON_AI_API</code>
+                <button 
+                  onClick={() => copyToClipboard('EBURON_AI_API', 'header_key')}
+                  className="p-1 hover:bg-gray-100 rounded cursor-pointer transition-colors"
+                >
+                  {copiedPath === 'header_key' ? <Check className="w-3.5 h-3.5 text-green-600" /> : <Copy className="w-3.5 h-3.5 text-gray-300" />}
+                </button>
+              </div>
+            </div>
+            <button 
+              onClick={() => {
+                const mockKey = `EBURON_${Math.random().toString(36).substring(2, 11).toUpperCase()}`;
+                copyToClipboard(mockKey, 'generated_key');
+              }}
+              className="bg-[#89bf04] hover:bg-[#78a804] text-white font-black text-xs py-3 rounded-lg shadow-md items-center justify-center gap-2 flex transition-all active:scale-[0.98] cursor-pointer"
+            >
+              {copiedPath === 'generated_key' ? <Check className="w-4 h-4" /> : <ShieldCheck className="w-4 h-4" />}
+              <span>{copiedPath === 'generated_key' ? 'KEY COPIED TO TERMINAL BUFFER' : 'PROVISION & COPY API KEY'}</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
       {/* 1. Whitelisted Models Registry */}
       <section className="bg-white rounded border border-[#e8e8e8] shadow-sm p-6 space-y-4">
         <div className="flex items-center gap-2.5 border-b border-gray-100 pb-3">
@@ -589,11 +631,24 @@ export default function DeveloperSuite() {
             <div key={idx} className="border border-gray-200 rounded-lg overflow-hidden hover:border-[#89bf04]/50 transition-all shadow-xs">
               {/* Header */}
               <div className="bg-gray-50 px-4 py-3 border-b border-gray-200 flex flex-wrap items-center justify-between gap-3 text-xs">
-                <div className="flex items-center gap-2 font-mono">
-                  <span className={`font-black text-[10px] uppercase px-2 py-0.5 rounded text-white ${spec.method === 'POST' ? 'bg-[#49cc90]' : 'bg-[#50a3f2]'}`}>
-                    {spec.method}
-                  </span>
-                  <span className="font-extrabold text-gray-800 text-sm">{spec.path}</span>
+                <div className="flex items-center gap-2 font-mono group">
+                  <button 
+                    onClick={() => copyToClipboard(spec.method, `method_${spec.path}`)}
+                    className={`font-black text-[10px] uppercase px-2 py-0.5 rounded text-white cursor-pointer transition-transform active:scale-95 ${spec.method === 'POST' ? 'bg-[#49cc90]' : 'bg-[#50a3f2]'}`}
+                    title="Click to copy method"
+                  >
+                    {copiedPath === `method_${spec.path}` ? <Check className="w-3 h-3" /> : spec.method}
+                  </button>
+                  <div className="flex items-center gap-1.5 hover:bg-gray-100 pr-2 rounded transition-colors group">
+                    <span className="font-extrabold text-gray-800 text-sm">{spec.path}</span>
+                    <button 
+                      onClick={() => copyToClipboard(spec.path, `path_${spec.path}`)}
+                      className="opacity-0 group-hover:opacity-100 p-0.5 transition-all text-gray-400 hover:text-blue-600 cursor-pointer"
+                      title="Copy path"
+                    >
+                      {copiedPath === `path_${spec.path}` ? <Check className="w-3.5 h-3.5 text-green-600" /> : <Copy className="w-3.5 h-3.5" />}
+                    </button>
+                  </div>
                 </div>
                 <div className="text-[10px] text-gray-400 font-sans tracking-wide">
                   Endpoint index {idx + 1} of 21 (Eburon Whitelisted)
@@ -646,14 +701,30 @@ export default function DeveloperSuite() {
 
                   <div className="flex flex-wrap gap-2 text-[10px] pt-1">
                     {spec.streaming && spec.streaming !== 'None' && (
-                      <span className="bg-yellow-50 text-yellow-800 border border-yellow-100 px-2 py-0.5 rounded font-mono font-bold">
-                        Stream: {spec.streaming}
-                      </span>
+                      <div className="flex items-center gap-1 group">
+                        <span className="bg-yellow-50 text-yellow-800 border border-yellow-100 px-2 py-0.5 rounded font-mono font-bold">
+                          Stream: {spec.streaming}
+                        </span>
+                        <button 
+                          onClick={() => copyToClipboard(spec.streaming!, `stream_${spec.path}`)}
+                          className="opacity-0 group-hover:opacity-100 cursor-pointer p-0.5 hover:text-yellow-600 transition-all"
+                        >
+                          {copiedPath === `stream_${spec.path}` ? <Check className="w-2.5 h-2.5" /> : <Copy className="w-2.5 h-2.5 text-gray-300" />}
+                        </button>
+                      </div>
                     )}
                     {spec.outputs && spec.outputs !== 'None' && (
-                      <span className="bg-purple-50 text-purple-800 border border-purple-100 px-2 py-0.5 rounded font-mono font-bold">
-                        Emits Output Vector: {spec.outputs}
-                      </span>
+                      <div className="flex items-center gap-1 group">
+                        <span className="bg-purple-50 text-purple-800 border border-purple-100 px-2 py-0.5 rounded font-mono font-bold">
+                          Emits Output Vector: {spec.outputs}
+                        </span>
+                        <button 
+                          onClick={() => copyToClipboard(spec.outputs!, `output_${spec.path}`)}
+                          className="opacity-0 group-hover:opacity-100 cursor-pointer p-0.5 hover:text-purple-600 transition-all"
+                        >
+                          {copiedPath === `output_${spec.path}` ? <Check className="w-2.5 h-2.5" /> : <Copy className="w-2.5 h-2.5 text-gray-300" />}
+                        </button>
+                      </div>
                     )}
                   </div>
                 </div>

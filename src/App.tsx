@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Square, Settings, Radio, Mic, Key, Check, Info, ChevronDown, ChevronRight, Lock, ExternalLink, RefreshCw, MessageSquare, History, Trash2, Plus, X } from 'lucide-react';
+import { Play, Square, Settings, Radio, Mic, Key, Check, Copy, Info, ChevronDown, ChevronRight, Lock, ExternalLink, RefreshCw, MessageSquare, History, Trash2, Plus, X } from 'lucide-react';
 import clsx from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -52,6 +52,33 @@ export default function App() {
   const [selectedServer, setSelectedServer] = useState(window.location.origin);
   const [defaultSectionExpanded, setDefaultSectionExpanded] = useState(true);
   const [activeTab, setActiveTab] = useState<'playground' | 'developer-suite'>('playground');
+
+  // Copy to clipboard helpers
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const copyToClipboard = (text: string, id: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  // Reusable Code Block with Copy
+  const CodeBlock = ({ label, value, id, textColorClass = "text-[#f8f8f2]", maxHeight = "max-h-24" }: any) => (
+    <div>
+      <div className="flex justify-between items-center mb-1 px-0.5">
+        <span className="text-gray-400 block text-[9px] uppercase font-semibold">{label}</span>
+        <button 
+          onClick={() => copyToClipboard(value, id)} 
+          className="text-gray-500 hover:text-white transition-colors cursor-pointer p-1 rounded hover:bg-gray-800"
+          title="Copy to clipboard"
+        >
+          {copiedId === id ? <Check className="w-3 h-3 text-green-400" /> : <Copy className="w-3 h-3" />}
+        </button>
+      </div>
+      <pre className={cn("bg-[#292a2b] p-2 rounded overflow-auto whitespace-pre", textColorClass, maxHeight)}>
+        {value}
+      </pre>
+    </div>
+  );
 
   // Endpoint 1: POST /api/session/token
   const [postExpanded, setPostExpanded] = useState(true);
@@ -243,25 +270,37 @@ export default function App() {
   const [vidAnCurl, setVidAnCurl] = useState<string>('');
   const [vidAnReqUrl, setVidAnReqUrl] = useState<string>('');
 
-  // Handle native browser speech synthesis preview 
-  const playSampleVoice = (voiceOpt: any) => {
-    if (window.speechSynthesis) {
-      window.speechSynthesis.cancel();
+  // Handle Eburon Voice Preview via Pluto TTS Registry
+  const playSampleVoice = async (voiceOpt: any) => {
+    try {
+      addLog('system', `Requesting high-fidelity voice preview for: ${voiceOpt.superhero_name} (${voiceOpt.base_voice})...`);
       const sentence = `Hello, I am ${voiceOpt.superhero_name}. ${voiceOpt.description}`;
-      const utterance = new SpeechSynthesisUtterance(sentence);
       
-      if (voiceOpt.gender === 'male') {
-        utterance.pitch = 0.8;
-      } else if (voiceOpt.gender === 'female') {
-        utterance.pitch = 1.2;
+      const res = await fetch('/v1/audio/speech', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          input: sentence,
+          voice: voiceOpt.base_voice
+        })
+      });
+
+      if (res.ok) {
+        const blob = await res.blob();
+        const audioUrl = URL.createObjectURL(blob);
+        const audio = new Audio(audioUrl);
+        audio.play();
+        addLog('server', `Voice preview for ${voiceOpt.superhero_name} synthesized and playing.`);
       } else {
-        utterance.pitch = 1.0;
+        throw new Error('TTS Engine failed to respond.');
       }
-      
-      if (voiceOpt.tone.includes('fast')) utterance.rate = 1.2;
-      else if (voiceOpt.tone.includes('slow')) utterance.rate = 0.8;
-      
-      window.speechSynthesis.speak(utterance);
+    } catch (err: any) {
+      addLog('error', `Voice preview failed: ${err.message}. Falling back to browser speech.`);
+      if (window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(`Hello, I am ${voiceOpt.superhero_name}.`);
+        window.speechSynthesis.speak(utterance);
+      }
     }
   };
 
@@ -332,7 +371,7 @@ export default function App() {
     const targetUrl = `${selectedServer}/v1/chat/completions`;
     setChatReqUrl(targetUrl);
     setChatCurl(
-      `curl -X 'POST' \\\n  '${targetUrl}' \\\n  -H 'accept: application/json' \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n  "messages": ${JSON.stringify(updatedMessages, null, 2).replace(/\n/g, '\n  ')},\n  "model": "${chatModel}",\n  "temperature": ${chatTemperature}\n}'`
+      `curl -X 'POST' \\\n  '${targetUrl}' \\\n  -H 'accept: application/json' \\\n  -H 'Content-Type: application/json' \\\n  -H 'EBURON_AI_API: ${apiKeyVal}' \\\n  -d '{\n  "messages": ${JSON.stringify(updatedMessages, null, 2).replace(/\n/g, '\n  ')},\n  "model": "${chatModel}",\n  "temperature": ${chatTemperature}\n}'`
     );
 
     try {
@@ -403,7 +442,7 @@ export default function App() {
     const targetUrl = `${selectedServer}/v1/audio/speech`;
     setSpeechReqUrl(targetUrl);
     setSpeechCurl(
-      `curl -X 'POST' \\\n  '${targetUrl}' \\\n  -H 'accept: audio/wav' \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n  "input": "${speechInput.replace(/"/g, '\\"').replace(/\n/g, '\\n')}",\n  "voice": "${speechVoice}"\n}'`
+      `curl -X 'POST' \\\n  '${targetUrl}' \\\n  -H 'accept: audio/wav' \\\n  -H 'Content-Type: application/json' \\\n  -H 'EBURON_AI_API: ${apiKeyVal}' \\\n  -d '{\n  "input": "${speechInput.replace(/"/g, '\\"').replace(/\n/g, '\\n')}",\n  "voice": "${speechVoice}"\n}'`
     );
 
     try {
@@ -541,7 +580,7 @@ export default function App() {
     const targetUrl = `${selectedServer}/v1/audio/transcriptions`;
     setTransReqUrl(targetUrl);
     setTransCurl(
-      `curl -X 'POST' \\\n  '${targetUrl}' \\\n  -H 'accept: application/json' \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n  "file": "${transFileBase64.slice(0, 40)}...",\n  "mimeType": "${transMimeType}"\n}'`
+      `curl -X 'POST' \\\n  '${targetUrl}' \\\n  -H 'accept: application/json' \\\n  -H 'Content-Type: application/json' \\\n  -H 'EBURON_AI_API: ${apiKeyVal}' \\\n  -d '{\n  "file": "${transFileBase64.slice(0, 40)}...",\n  "mimeType": "${transMimeType}"\n}'`
     );
 
     try {
@@ -581,7 +620,7 @@ export default function App() {
     const targetUrl = `${selectedServer}/v1/images/generations`;
     setImagesReqUrl(targetUrl);
     setImagesCurl(
-      `curl -X 'POST' \\\n  '${targetUrl}' \\\n  -H 'accept: application/json' \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n  "prompt": "${imagesPrompt.replace(/"/g, '\\"').replace(/\n/g, '\\n')}"\n}'`
+      `curl -X 'POST' \\\n  '${targetUrl}' \\\n  -H 'accept: application/json' \\\n  -H 'Content-Type: application/json' \\\n  -H 'EBURON_AI_API: ${apiKeyVal}' \\\n  -d '{\n  "prompt": "${imagesPrompt.replace(/"/g, '\\"').replace(/\n/g, '\\n')}"\n}'`
     );
 
     try {
@@ -619,7 +658,7 @@ export default function App() {
     setLangExecuting(true);
     const targetUrl = `${selectedServer}/v1/languages`;
     setLangReqUrl(targetUrl);
-    setLangCurl(`curl -X 'GET' \\\n  '${targetUrl}' \\\n  -H 'accept: application/json'`);
+    setLangCurl(`curl -X 'GET' \\\n  '${targetUrl}' \\\n  -H 'EBURON_AI_API: ${apiKeyVal}' \\\n  -H 'accept: application/json'`);
 
     try {
       const startTime = performance.now();
@@ -647,7 +686,7 @@ export default function App() {
     setVoicesExecuting(true);
     const targetUrl = `${selectedServer}/v1/voices`;
     setVoicesReqUrl(targetUrl);
-    setVoicesCurl(`curl -X 'GET' \\\n  '${targetUrl}' \\\n  -H 'accept: application/json'`);
+    setVoicesCurl(`curl -X 'GET' \\\n  '${targetUrl}' \\\n  -H 'EBURON_AI_API: ${apiKeyVal}' \\\n  -H 'accept: application/json'`);
 
     try {
       const startTime = performance.now();
@@ -675,7 +714,7 @@ export default function App() {
     setShareExecuting(true);
     const targetUrl = `${selectedServer}/v1/video/screenshare`;
     setShareReqUrl(targetUrl);
-    setShareCurl(`curl -X 'POST' \\\n  '${targetUrl}' \\\n  -H 'accept: application/json' \\\n  -d '{}'`);
+    setShareCurl(`curl -X 'POST' \\\n  '${targetUrl}' \\\n  -H 'EBURON_AI_API: ${apiKeyVal}' \\\n  -H 'accept: application/json' \\\n  -d '{}'`);
 
     try {
       const startTime = performance.now();
@@ -703,7 +742,7 @@ export default function App() {
     setFuncExecExecuting(true);
     const targetUrl = `${selectedServer}/v1/functions/execute`;
     setFuncExecReqUrl(targetUrl);
-    setFuncExecCurl(`curl -X 'POST' \\\n  '${targetUrl}' \\\n  -H 'accept: application/json' \\\n  -H 'Content-Type: application/json' \\\n  -d '${funcExecPayload.replace(/'/g, "'\\''")}'`);
+    setFuncExecCurl(`curl -X 'POST' \\\n  '${targetUrl}' \\\n  -H 'EBURON_AI_API: ${apiKeyVal}' \\\n  -H 'accept: application/json' \\\n  -H 'Content-Type: application/json' \\\n  -d '${funcExecPayload.replace(/'/g, "'\\''")}'`);
 
     try {
       const startTime = performance.now();
@@ -731,7 +770,7 @@ export default function App() {
     setFuncOutExecuting(true);
     const targetUrl = `${selectedServer}/v1/functions/outputs`;
     setFuncOutReqUrl(targetUrl);
-    setFuncOutCurl(`curl -X 'POST' \\\n  '${targetUrl}' \\\n  -H 'accept: application/json' \\\n  -H 'Content-Type: application/json' \\\n  -d '${funcOutPayload.replace(/'/g, "'\\''")}'`);
+    setFuncOutCurl(`curl -X 'POST' \\\n  '${targetUrl}' \\\n  -H 'EBURON_AI_API: ${apiKeyVal}' \\\n  -H 'accept: application/json' \\\n  -H 'Content-Type: application/json' \\\n  -d '${funcOutPayload.replace(/'/g, "'\\''")}'`);
 
     try {
       const startTime = performance.now();
@@ -759,7 +798,7 @@ export default function App() {
     setEmoResExecuting(true);
     const targetUrl = `${selectedServer}/v1/emotions/results`;
     setEmoResReqUrl(targetUrl);
-    setEmoResCurl(`curl -X 'GET' \\\n  '${targetUrl}' \\\n  -H 'accept: application/json'`);
+    setEmoResCurl(`curl -X 'GET' \\\n  '${targetUrl}' \\\n  -H 'EBURON_AI_API: ${apiKeyVal}' \\\n  -H 'accept: application/json'`);
 
     try {
       const startTime = performance.now();
@@ -786,7 +825,7 @@ export default function App() {
     setTtstreamExecuting(true);
     const targetUrl = `${selectedServer}/v1/audio/speech/stream`;
     setTtstreamReqUrl(targetUrl);
-    setTtstreamCurl(`curl -N -X 'POST' \\\n  '${targetUrl}' \\\n  -H 'accept: audio/mpeg' \\\n  -H 'Content-Type: application/json' \\\n  -d '${ttstreamPayload.replace(/'/g, "'\\''")}'`);
+    setTtstreamCurl(`curl -N -X 'POST' \\\n  '${targetUrl}' \\\n  -H 'EBURON_AI_API: ${apiKeyVal}' \\\n  -H 'accept: audio/mpeg' \\\n  -H 'Content-Type: application/json' \\\n  -d '${ttstreamPayload.replace(/'/g, "'\\''")}'`);
 
     try {
       const startTime = performance.now();
@@ -824,7 +863,7 @@ export default function App() {
     setVidAnResponse([]);
     const targetUrl = `${selectedServer}/v1/video/analysis/stream`;
     setVidAnReqUrl(targetUrl);
-    setVidAnCurl(`curl -N -X 'POST' \\\n  '${targetUrl}' \\\n  -H 'accept: text/event-stream'`);
+    setVidAnCurl(`curl -N -X 'POST' \\\n  '${targetUrl}' \\\n  -H 'EBURON_AI_API: ${apiKeyVal}' \\\n  -H 'accept: text/event-stream'`);
 
     try {
       const res = await fetch('/v1/video/analysis/stream', {
@@ -871,7 +910,7 @@ export default function App() {
     setEmoSynExecuting(true);
     const targetUrl = `${selectedServer}/v1/emotions/synthesis`;
     setEmoSynReqUrl(targetUrl);
-    setEmoSynCurl(`curl -X 'POST' \\\n  '${targetUrl}' \\\n  -H 'accept: application/json' \\\n  -H 'Content-Type: application/json' \\\n  -d '${emoSynPayload.replace(/'/g, "'\\''")}'`);
+    setEmoSynCurl(`curl -X 'POST' \\\n  '${targetUrl}' \\\n  -H 'EBURON_AI_API: ${apiKeyVal}' \\\n  -H 'accept: application/json' \\\n  -H 'Content-Type: application/json' \\\n  -d '${emoSynPayload.replace(/'/g, "'\\''")}'`);
 
     try {
       const startTime = performance.now();
@@ -910,7 +949,7 @@ export default function App() {
     const targetUrl = `${selectedServer}/api/session/token`;
     setPostReqUrl(targetUrl);
     setPostCurl(
-      `curl -X 'POST' \\\n  '${targetUrl}' \\\n  -H 'accept: application/json' \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n  "voiceName": "${postVoiceName}",\n  "temperature": ${postTemperature},\n  "systemInstruction": "${postSystemInstruction.replace(/'/g, "'\\''")}"\n}'`
+      `curl -X 'POST' \\\n  '${targetUrl}' \\\n  -H 'accept: application/json' \\\n  -H 'Content-Type: application/json' \\\n  -H 'EBURON_AI_API: ${apiKeyVal}' \\\n  -d '{\n  "voiceName": "${postVoiceName}",\n  "temperature": ${postTemperature},\n  "systemInstruction": "${postSystemInstruction.replace(/'/g, "'\\''")}"\n}'`
     );
 
     try {
@@ -1338,25 +1377,10 @@ export default function App() {
                         
                         {postResponse ? (
                           <div className="space-y-3 font-mono text-[11px]">
-                            <div>
-                              <span className="text-gray-400 block text-[9px] uppercase font-semibold mb-1">Curl Request Payload</span>
-                              <pre className="bg-[#292a2b] text-[#f8f8f2] p-2 rounded overflow-auto max-h-24 whitespace-pre">{postCurl}</pre>
-                            </div>
-                            <div>
-                              <span className="text-gray-400 block text-[9px] uppercase font-semibold mb-1">Request Endpoint URL</span>
-                              <pre className="bg-[#292a2b] text-blue-300 p-2 rounded overflow-auto whitespace-pre">{postReqUrl}</pre>
-                            </div>
-                            <div>
-                              <span className="text-gray-400 block text-[9px] uppercase font-semibold mb-1">Server Response Headers</span>
-                              <pre className="bg-[#292a2b] text-yellow-200 p-2 rounded max-h-24 overflow-auto whitespace-pre">{postHeaders}</pre>
-                            </div>
-                            <div>
-                              <div className="flex justify-between items-center mb-1">
-                                <span className="text-gray-400 text-[9px] uppercase font-semibold">Response Body (JSON)</span>
-                                <span className="text-xs text-green-500 font-bold">Code 200 OK</span>
-                              </div>
-                              <pre className="bg-[#292a2b] text-[#f8f8f2] p-2.5 rounded overflow-auto whitespace-pre max-h-40">{JSON.stringify(postResponse, null, 2)}</pre>
-                            </div>
+                            <CodeBlock label="Curl Request Payload" value={postCurl} id="c_post" />
+                            <CodeBlock label="Request Endpoint URL" value={postReqUrl} id="u_post" textColorClass="text-blue-300" />
+                            <CodeBlock label="Server Response Headers" value={postHeaders} id="h_post" textColorClass="text-yellow-200" />
+                            <CodeBlock label="Response Body (JSON)" value={JSON.stringify(postResponse, null, 2)} id="r_post" maxHeight="max-h-40" />
                           </div>
                         ) : (
                           <div className="h-full min-h-[160px] flex items-center justify-center border border-dashed border-gray-200 bg-gray-50 rounded text-center p-4">
@@ -1679,25 +1703,10 @@ export default function App() {
                         
                         {chatResponse ? (
                           <div className="space-y-3 font-mono text-[11px]">
-                            <div>
-                              <span className="text-gray-400 block text-[9px] uppercase font-semibold mb-1">Curl Command Payload</span>
-                              <pre className="bg-[#292a2b] text-[#f8f8f2] p-2 rounded overflow-auto max-h-24 whitespace-pre">{chatCurl}</pre>
-                            </div>
-                            <div>
-                              <span className="text-gray-400 block text-[9px] uppercase font-semibold mb-1">Request Endpoint URL</span>
-                              <pre className="bg-[#292a2b] text-blue-300 p-2 rounded overflow-auto whitespace-pre">{chatReqUrl}</pre>
-                            </div>
-                            <div>
-                              <span className="text-gray-400 block text-[9px] uppercase font-semibold mb-1">Server Response Headers</span>
-                              <pre className="bg-[#292a2b] text-yellow-200 p-2 rounded max-h-24 overflow-auto whitespace-pre">{chatHeaders}</pre>
-                            </div>
-                            <div>
-                              <div className="flex justify-between items-center mb-1">
-                                <span className="text-gray-400 text-[9px] uppercase font-semibold">Response Content (JSON)</span>
-                                <span className="text-xs text-green-500 font-bold">Code 200 OK</span>
-                              </div>
-                              <pre className="bg-[#292a2b] text-[#f8f8f2] p-2.5 rounded overflow-auto whitespace-pre max-h-56 leading-relaxed bg-[#1b1c1d]">{JSON.stringify(chatResponse, null, 2)}</pre>
-                            </div>
+                            <CodeBlock label="Curl Command Payload" value={chatCurl} id="c_chat" />
+                            <CodeBlock label="Request Endpoint URL" value={chatReqUrl} id="u_chat" textColorClass="text-blue-300" />
+                            <CodeBlock label="Server Response Headers" value={chatHeaders} id="h_chat" textColorClass="text-yellow-200" />
+                            <CodeBlock label="Response Content (JSON)" value={JSON.stringify(chatResponse, null, 2)} id="r_chat" maxHeight="max-h-56" />
 
                             {/* User & AI conversational view representation */}
                             {(activeThreadId && chatThreads.find(t => t.id === activeThreadId)) ? (
@@ -1848,18 +1857,9 @@ export default function App() {
                         
                         {speechResponse ? (
                           <div className="space-y-3 font-mono text-[11px]">
-                            <div>
-                              <span className="text-gray-400 block text-[9px] uppercase font-semibold mb-1">Curl Command Line</span>
-                              <pre className="bg-[#292a2b] text-[#f8f8f2] p-2 rounded overflow-auto max-h-24 whitespace-pre">{speechCurl}</pre>
-                            </div>
-                            <div>
-                              <span className="text-gray-400 block text-[9px] uppercase font-semibold mb-1">Request Endpoint URL</span>
-                              <pre className="bg-[#292a2b] text-blue-300 p-2 rounded overflow-auto whitespace-pre">{speechReqUrl}</pre>
-                            </div>
-                            <div>
-                              <span className="text-gray-400 block text-[9px] uppercase font-semibold mb-1">Server Response Headers</span>
-                              <pre className="bg-[#292a2b] text-yellow-200 p-2 rounded max-h-24 overflow-auto whitespace-pre">{speechHeaders}</pre>
-                            </div>
+                            <CodeBlock label="Curl Command Line" value={speechCurl} id="c_speech" />
+                            <CodeBlock label="Request Endpoint URL" value={speechReqUrl} id="u_speech" textColorClass="text-blue-300" />
+                            <CodeBlock label="Server Response Headers" value={speechHeaders} id="h_speech" textColorClass="text-yellow-200" />
 
                             {speechResponse.success ? (
                               <div className="bg-green-50/20 border border-green-200/50 rounded-lg p-4 font-sans space-y-3">
@@ -2047,18 +2047,9 @@ export default function App() {
                         
                         {transResponse ? (
                           <div className="space-y-3 font-mono text-[11px]">
-                            <div>
-                              <span className="text-gray-400 block text-[9px] uppercase font-semibold mb-1">Curl JSON payload</span>
-                              <pre className="bg-[#292a2b] text-[#f8f8f2] p-2 rounded overflow-auto max-h-24 whitespace-pre">{transCurl}</pre>
-                            </div>
-                            <div>
-                              <span className="text-gray-400 block text-[9px] uppercase font-semibold mb-1">Request Endpoint URL</span>
-                              <pre className="bg-[#292a2b] text-blue-300 p-2 rounded overflow-auto whitespace-pre">{transReqUrl}</pre>
-                            </div>
-                            <div>
-                              <span className="text-gray-400 block text-[9px] uppercase font-semibold mb-1">Server Response Headers</span>
-                              <pre className="bg-[#292a2b] text-yellow-200 p-2 rounded max-h-24 overflow-auto whitespace-pre">{transHeaders}</pre>
-                            </div>
+                            <CodeBlock label="Curl JSON payload" value={transCurl} id="c_trans" />
+                            <CodeBlock label="Request Endpoint URL" value={transReqUrl} id="u_trans" textColorClass="text-blue-300" maxHeight="max-h-none" />
+                            <CodeBlock label="Server Response Headers" value={transHeaders} id="h_trans" textColorClass="text-yellow-200" />
 
                             {/* Conversation bubble with transcription output */}
                             <div className="space-y-2 border border-green-200 rounded-lg p-3 bg-green-50/10 font-sans">
@@ -2081,13 +2072,7 @@ export default function App() {
                               )}
                             </div>
 
-                            <div>
-                              <div className="flex justify-between items-center mb-1">
-                                <span className="text-gray-400 text-[9px] uppercase font-semibold">Response Content (JSON)</span>
-                                <span className="text-xs text-green-500 font-bold">Code 200 OK</span>
-                              </div>
-                              <pre className="bg-[#292a2b] text-[#f8f8f2] p-2 rounded overflow-auto whitespace-pre max-h-40">{JSON.stringify(transResponse, null, 2)}</pre>
-                            </div>
+                            <CodeBlock label="Response Content (JSON)" value={JSON.stringify(transResponse, null, 2)} id="r_trans" maxHeight="max-h-40" />
                           </div>
                         ) : (
                           <div className="h-full min-h-[160px] flex items-center justify-center border border-dashed border-gray-200 bg-gray-50 rounded text-center p-4">
@@ -2297,18 +2282,9 @@ export default function App() {
                         <h4 className="font-bold text-xs uppercase text-gray-500 tracking-wider">Response</h4>
                         {langResponse ? (
                           <div className="space-y-3 font-mono text-[11px]">
-                            <div>
-                               <span className="text-gray-400 block text-[9px] uppercase font-semibold mb-1">Curl Command Line</span>
-                               <pre className="bg-[#292a2b] text-[#f8f8f2] p-2 rounded overflow-auto max-h-24 whitespace-pre">{langCurl}</pre>
-                            </div>
-                            <div>
-                               <span className="text-gray-400 block text-[9px] uppercase font-semibold mb-1">Request Endpoint URL</span>
-                               <pre className="bg-[#292a2b] text-blue-300 p-2 rounded overflow-auto whitespace-pre">{langReqUrl}</pre>
-                            </div>
-                            <div>
-                               <span className="text-green-500 font-bold block mb-1">Code 200 OK</span>
-                               <pre className="bg-[#292a2b] text-[#f8f8f2] p-2 rounded overflow-auto whitespace-pre max-h-40">{JSON.stringify(langResponse, null, 2)}</pre>
-                            </div>
+                            <CodeBlock label="Curl Command Line" value={langCurl} id="c_lang" />
+                            <CodeBlock label="Request Endpoint URL" value={langReqUrl} id="u_lang" textColorClass="text-blue-300" maxHeight="max-h-none" />
+                            <CodeBlock label="Response Content (JSON)" value={JSON.stringify(langResponse, null, 2)} id="r_lang" maxHeight="max-h-40" />
                           </div>
                         ) : (
                           <div className="h-full min-h-[160px] flex items-center justify-center border border-dashed border-gray-200 bg-gray-50 rounded text-center p-4">
@@ -2389,7 +2365,15 @@ export default function App() {
                                        <div className="flex justify-between items-start mb-2">
                                          <div>
                                            <h5 className="font-extrabold text-sm text-gray-800">{voice.superhero_name}</h5>
-                                           <span className="text-[10px] uppercase font-bold text-gray-400">ID: {voice.id} • {voice.gender}</span>
+                                  <div className="flex items-center gap-2">
+                                     <button 
+                                      onClick={() => copyToClipboard(voice.id, `v_id_${voice.id}`)}
+                                      className="text-[10px] uppercase font-bold text-gray-400 hover:text-blue-500 cursor-pointer flex items-center gap-1"
+                                     >
+                                       ID: {voice.id} {copiedId === `v_id_${voice.id}` ? <Check className="w-3 h-3 text-green-500" /> : <Copy className="w-2.5 h-2.5" />}
+                                     </button>
+                                     <span className="text-[10px] text-gray-400">• {voice.gender}</span>
+                                  </div>
                                          </div>
                                          <button 
                                            onClick={(e) => { e.preventDefault(); playSampleVoice(voice); }}

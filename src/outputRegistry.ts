@@ -142,7 +142,7 @@ export const outputRegistry: OutputRegistryEntry[] = [
   {
     id: "nearby_places_result",
     label: "Nearby Places Result",
-    description: "Locations list from Google Places spatial searches.",
+    description: "Spatial search result clusters for geofencing and locations.",
     transport: "response",
     mimeType: "application/json",
     canBecomeApiCall: true

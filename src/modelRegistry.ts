@@ -24,7 +24,7 @@ export const modelRegistry: ModelEntry[] = [
     publicName: "Pluto 1.0",
     publicModelId: "pluto-1.0-live",
     provider: "Z29vZ2xlLWdlbWluaS1saXZlLWF1ZGlv",
-    providerModelId: "Z2VtaW5pLTIuNS1mbGFzaC1uYXRpdmUtYXVkaW8tcHJldmlldy0wOS0yMDI1",
+    providerModelId: "Z2VtaW5pLTMuMS1mbGFzaC1saXZlLXByZXZpZXc=",
     status: "whitelisted",
     owner: "Eburon AI"
   }

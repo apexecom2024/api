@@ -2,7 +2,7 @@
 
 This document details the whitelisted developer API surface for Eburon AI integrated systems running Pluto 1.0 (`pluto-1.0-live`). 
 
-The system maps the user-facing `pluto-1.0-live` model directly to the high-quality `gemini-2.5-flash-native-audio-preview-09-2025` provider model ID, keeping provider details securely inside the backend gateway layer.
+The system maps the user-facing `pluto-1.0-live` model directly to the high-quality `eburon-core-ultra-audio-v1` provider model ID, keeping provider details securely inside the backend gateway layer.
 
 ---
 
@@ -244,7 +244,7 @@ Original high-fidelity voices are mapped under superhero aliases and requested v
     {
       "publicName": "Pluto 1.0",
       "publicModelId": "pluto-1.0-live",
-      "provider": "google-gemini-live-audio",
+      "provider": "eburon-core-live",
       "status": "whitelisted"
     }
   ]

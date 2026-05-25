@@ -26,9 +26,9 @@ async function startServer() {
 
   const PORT = 3000;
 
-  const PLUTO_MODEL_LIVE = Buffer.from("Z2VtaW5pLTIuNS1mbGFzaC1uYXRpdmUtYXVkaW8tcHJldmlldy0wOS0yMDI1", "base64").toString("utf-8");
-  const PLUTO_MODEL_TTS = Buffer.from("Z2VtaW5pLTIuNS1mbGFzaC1uYXRpdmUtYXVkaW8tcHJldmlldy0wOS0yMDI1", "base64").toString("utf-8");
-  const PLUTO_MODEL_TEXT = Buffer.from("Z2VtaW5pLTIuNS1mbGFzaA==", "base64").toString("utf-8");
+  const PLUTO_MODEL_LIVE = Buffer.from("Z2VtaW5pLTMuMS1mbGFzaC1saXZlLXByZXZpZXc=", "base64").toString("utf-8");
+  const PLUTO_MODEL_TTS = Buffer.from("Z2VtaW5pLTMuMS1mbGFzaC10dHMtcHJldmlldw==", "base64").toString("utf-8");
+  const PLUTO_MODEL_TEXT = Buffer.from("Z2VtaW5pLTMuNS1mbGFzaA==", "base64").toString("utf-8");
 
   // Eburon client (server side)
   const ai = new GoogleGenAI({
@@ -817,7 +817,7 @@ You dont spund like offerring a help or any AI type questions, you breath, you l
       }
 
       // Hit neptune-1.0 via standard REST to avoid type limits and support multimodal response modalities
-      const NEPTUNE_MODEL = Buffer.from("Z2VtaW5pLTIuNS1mbGFzaC1pbWFnZQ==", "base64").toString("utf-8");
+      const NEPTUNE_MODEL = Buffer.from("Z2VtaW5pLTEuNS1mbGFzaA==", "base64").toString("utf-8");
       const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${NEPTUNE_MODEL}:generateContent?key=${apiKey}`, {
         method: 'POST',
         headers: {
@@ -1473,7 +1473,7 @@ You dont spund like offerring a help or any AI type questions, you breath, you l
       }
 
       // Determine voice and model to use from query parameter with whitelisted mapping
-      let chosenModelId = Buffer.from("Z2VtaW5pLTIuNS1mbGFzaC1uYXRpdmUtYXVkaW8tcHJldmlldy0wOS0yMDI1", "base64").toString("utf-8");
+      let chosenModelId = PLUTO_MODEL_LIVE;
       let finalVoiceName = "Aoede";
       if (req && req.url) {
         try {
