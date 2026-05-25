@@ -1,0 +1,10 @@
+{
+  "name": "Remix: Eburon Live Audio Gateway",
+  "description": "Exposes Eburon Live Audio Engine and OpenAI-compatible completions, styled as an interactive Swagger UI testing playground.",
+  "requestFramePermissions": [
+    "microphone"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
