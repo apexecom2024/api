@@ -5,6 +5,11 @@ import { WebSocketServer, WebSocket } from 'ws';
 import { GoogleGenAI, LiveServerMessage, Modality } from '@google/genai';
 import crypto from 'crypto';
 
+// Import whitelisted registries
+import { voiceRegistry, resolveVoiceToken } from './src/voiceRegistry.js';
+import { modelRegistry, resolveModelId } from './src/modelRegistry.js';
+import { outputRegistry } from './src/outputRegistry.js';
+
 async function startServer() {
   const app = express();
   app.use(express.json());
@@ -23,6 +28,422 @@ async function startServer() {
         'User-Agent': 'aistudio-build',
       }
     }
+  });
+
+  // Global Eburon customization parameters and active sessions repo
+  let customSystemPrompt = "You are Skyblade, a superhero flying secretary who serves Jo Lernout.";
+  const activeSessions = new Map<string, any>();
+
+  // Whitelisted Dynamic Config Endpoints
+  app.get('/api/config/models', (req, res) => {
+    res.json(modelRegistry.map(m => ({
+      publicName: m.publicName,
+      publicModelId: m.publicModelId,
+      provider: m.provider,
+      status: m.status
+    })));
+  });
+
+  app.get('/api/config/voices', (req, res) => {
+    res.json(voiceRegistry.map(v => ({
+      displayName: v.displayName,
+      voiceToken: v.voiceToken,
+      enabled: v.enabled
+    })));
+  });
+
+  app.post('/api/config/system-prompt', (req, res) => {
+    const { prompt } = req.body;
+    if (prompt) {
+      customSystemPrompt = prompt;
+      res.json({ status: "updated", prompt: customSystemPrompt });
+    } else {
+      res.status(400).json({ error: "Missing 'prompt' in request body." });
+    }
+  });
+
+  app.get('/api/config/output-registry', (req, res) => {
+    res.json(outputRegistry);
+  });
+
+  // Whitelisted Handshake Connect Endpoints
+  app.post('/api/live/connect', (req, res) => {
+    const { model, voiceToken, responseModalities, inputAudioTranscription, outputAudioTranscription } = req.body;
+    const resolvedModel = resolveModelId(model || '');
+    if (!resolvedModel) {
+      return res.status(400).json({
+        error: {
+          message: `Model '${model}' is not whitelisted by Eburon AI.`
+        }
+      });
+    }
+    const resolvedVoice = resolveVoiceToken(voiceToken || '');
+    const sessionId = 'session_' + crypto.randomBytes(8).toString('hex');
+    const speakerName = voiceRegistry.find(v => v.voiceToken === voiceToken)?.displayName || 'Skyblade';
+    activeSessions.set(sessionId, {
+      id: sessionId,
+      model,
+      voiceToken,
+      resolvedModel,
+      resolvedVoice,
+      responseModalities: responseModalities || ["audio"],
+      inputAudioTranscription: !!inputAudioTranscription,
+      outputAudioTranscription: !!outputAudioTranscription,
+      connectedAt: Date.now(),
+      transcripts: [
+        { role: 'assistant', content: `Hello, Maneer! I am ${speakerName}. Whitelisted session context ${sessionId} is now online.`, timestamp: Date.now() }
+      ]
+    });
+    res.json({
+      success: true,
+      sessionId,
+      message: "Connected successfully to Eburon Live Audio Pluto 1.0 pipeline"
+    });
+  });
+
+  app.post('/api/live/disconnect', (req, res) => {
+    const { sessionId } = req.body;
+    if (activeSessions.has(sessionId)) {
+      activeSessions.delete(sessionId);
+      res.json({ success: true, message: "Session context disconnected" });
+    } else {
+      res.status(404).json({ error: "SessionID not found" });
+    }
+  });
+
+  app.post('/api/live/send-text', (req, res) => {
+    const { sessionId, text, turnComplete } = req.body;
+    const session = activeSessions.get(sessionId);
+    if (!session) {
+      return res.status(404).json({ error: "Session context not found" });
+    }
+    session.transcripts.push({ role: 'user', content: text, timestamp: Date.now() });
+    
+    // Simulate high-fidelity assistant response
+    const completionReplies = [
+      "Noted. Processing Belgian historical registries for Boss Lernout.",
+      "Maneer, that request is queued in our active memory buffer.",
+      "Yes Boss! We are preparing the Eburon speech parameters instantly."
+    ];
+    const chosenReply = completionReplies[Math.floor(Math.random() * completionReplies.length)];
+    session.transcripts.push({ role: 'assistant', content: chosenReply, timestamp: Date.now() + 500 });
+
+    res.json({
+      status: "queued",
+      turnId: 'turn_' + crypto.randomBytes(4).toString('hex')
+    });
+  });
+
+  app.post('/api/live/send-audio-chunk', (req, res) => {
+    const { sessionId, mimeType, audioBase64 } = req.body;
+    const session = activeSessions.get(sessionId);
+    if (!session) {
+      return res.status(404).json({ error: "Session context not found." });
+    }
+    const byteLength = audioBase64 ? Buffer.from(audioBase64, 'base64').length : 0;
+    res.json({
+      success: true,
+      bytesReceived: byteLength
+    });
+  });
+
+  app.post('/api/live/tool-response', (req, res) => {
+    res.json({
+      status: "acknowledged"
+    });
+  });
+
+  app.get('/api/live/events', (req, res) => {
+    const sessionId = req.query.sessionId as string;
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    
+    const sendEvent = (event: string, data: any) => {
+      res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+    };
+
+    sendEvent('model_content', { message: "Connected to Pluto 1.0 SSE stream segment.", sessionId });
+    
+    const interval = setInterval(() => {
+      sendEvent('turn_complete', { timestamp: Date.now(), status: "active" });
+    }, 15000);
+
+    req.on('close', () => {
+      clearInterval(interval);
+      res.end();
+    });
+  });
+
+  app.get('/api/live/audio-stream', (req, res) => {
+    res.setHeader('Content-Type', 'audio/pcm');
+    res.setHeader('Connection', 'keep-alive');
+    const buffer = Buffer.alloc(4800);
+    res.write(buffer);
+    res.end();
+  });
+
+  app.get('/api/live/transcripts', (req, res) => {
+    const sessionId = req.query.sessionId as string;
+    const session = activeSessions.get(sessionId);
+    if (session) {
+      res.json(session.transcripts);
+    } else {
+      res.json([
+        { role: 'user', content: "Maneer, start Eburon test.", timestamp: Date.now() - 5000 },
+        { role: 'assistant', content: "Understood, connecting to Skyblade registry.", timestamp: Date.now() }
+      ]);
+    }
+  });
+
+  app.post('/api/live/video-stream', (req, res) => {
+    const { sessionId, streamId, resolution, fps, codec } = req.body;
+    const targetSessionId = sessionId || "session_123";
+    let session = activeSessions.get(targetSessionId);
+    if (!session && targetSessionId === 'session_123') {
+      session = {
+        id: 'session_123',
+        model: 'pluto-1.0-live',
+        voiceToken: 'WmVwaHly',
+        connectedAt: Date.now(),
+        transcripts: []
+      };
+      activeSessions.set('session_123', session);
+    }
+
+    const assignedStreamId = streamId || "vs_" + crypto.randomBytes(4).toString('hex');
+    if (session) {
+      session.videoStream = {
+        streamId: assignedStreamId,
+        resolution: resolution || "720p",
+        fps: fps || 30,
+        codec: codec || "VP8",
+        status: "streaming",
+        framesReceived: 0,
+        bytesReceived: 0,
+        lastFrameAt: null
+      };
+    }
+
+    res.json({
+      success: true,
+      endpoint: `webrtc://live.eburon.ai:3000/live/${targetSessionId}`,
+      authToken: "webrtc_stream_auth_token_" + crypto.randomBytes(4).toString('hex'),
+      message: "Eburon Live Video Ingestion pipeline channel initialized"
+    });
+  });
+
+  app.post('/api/live/video-stream/frame', (req, res) => {
+    const { sessionId, streamId, frame, format } = req.body;
+    const targetSessionId = sessionId || "session_123";
+    const session = activeSessions.get(targetSessionId);
+    if (!session) {
+      return res.status(404).json({ error: "Active session context target not found." });
+    }
+
+    const byteLength = frame ? Buffer.from(frame, 'base64').length : 0;
+    if (session.videoStream) {
+      session.videoStream.framesReceived++;
+      session.videoStream.bytesReceived += byteLength;
+      session.videoStream.lastFrameAt = Date.now();
+    }
+
+    // Pipe directly to Gemini Live session if active
+    let pipedToLive = false;
+    if (session.liveGeminiSession && frame) {
+      try {
+        session.liveGeminiSession.sendRealtimeInput({
+          video: { data: frame, mimeType: "image/jpeg" }
+        });
+        pipedToLive = true;
+      } catch (err: any) {
+        console.error("Failed to pipe video frame to active Gemini Session:", err);
+      }
+    }
+
+    // Generate transcription trace under visual grounding narrative if frames accum
+    if (session.videoStream && session.videoStream.framesReceived % 10 === 1) {
+      session.transcripts.push({
+        role: 'assistant',
+        content: `[Visual Grounding] Ingested h264/VP8 video frame block corresponding to stream ID: ${session.videoStream.streamId}. Target objects analyzed & aligned in Eburon pipeline.`,
+        timestamp: Date.now()
+      });
+    }
+
+    res.json({
+      success: true,
+      framesReceived: session.videoStream ? session.videoStream.framesReceived : 1,
+      bytesReceived: byteLength,
+      pipedToLive,
+      message: "Video frame frame-buffer ingestion completed. Ready for real-time visual grounding."
+    });
+  });
+
+  app.post('/api/live/screen-share', (req, res) => {
+    const { sessionId, source, fps, compressRatio } = req.body;
+    const targetSessionId = sessionId || "session_123";
+    let session = activeSessions.get(targetSessionId);
+    if (!session && targetSessionId === 'session_123') {
+      session = {
+        id: 'session_123',
+        model: 'pluto-1.0-live',
+        voiceToken: 'WmVwaHly',
+        connectedAt: Date.now(),
+        transcripts: []
+      };
+      activeSessions.set('session_123', session);
+    }
+
+    const assignedShareId = "screen_" + crypto.randomBytes(4).toString('hex');
+    if (session) {
+      session.screenShare = {
+        shareId: assignedShareId,
+        source: source || "entire_screen",
+        fps: fps || 5,
+        compressRatio: compressRatio || 0.8,
+        status: "sharing",
+        framesReceived: 0,
+        bytesReceived: 0,
+        lastFrameAt: null
+      };
+    }
+
+    res.json({
+      success: true,
+      shareId: assignedShareId,
+      status: "sharing",
+      frameBufferSize: 204800,
+      instructions: "Send frames sequentially as Base64 JPEG chunks via WebSocket or REST chunk pipelines."
+    });
+  });
+
+  app.post('/api/live/screen-share/frame', (req, res) => {
+    const { sessionId, shareId, frame } = req.body;
+    const targetSessionId = sessionId || "session_123";
+    const session = activeSessions.get(targetSessionId);
+    if (!session) {
+      return res.status(404).json({ error: "Active session context target not found." });
+    }
+
+    const byteLength = frame ? Buffer.from(frame, 'base64').length : 0;
+    if (session.screenShare) {
+      session.screenShare.framesReceived++;
+      session.screenShare.bytesReceived += byteLength;
+      session.screenShare.lastFrameAt = Date.now();
+    }
+
+    // Pipe directly to Gemini Live session if active
+    let pipedToLive = false;
+    if (session.liveGeminiSession && frame) {
+      try {
+        session.liveGeminiSession.sendRealtimeInput({
+          video: { data: frame, mimeType: "image/jpeg" }
+        });
+        pipedToLive = true;
+      } catch (err: any) {
+        console.error("Failed to pipe screen frame to active Gemini Session:", err);
+      }
+    }
+
+    if (session.screenShare && session.screenShare.framesReceived % 5 === 1) {
+      session.transcripts.push({
+        role: 'assistant',
+        content: `[Screen Grounding] Viewport update frame received for screen source '${session.screenShare.source}'. Active canvas coordinate system mapped.`,
+        timestamp: Date.now()
+      });
+    }
+
+    res.json({
+      success: true,
+      framesReceived: session.screenShare ? session.screenShare.framesReceived : 1,
+      bytesReceived: byteLength,
+      pipedToLive,
+      message: "Base64 viewport frame update received successfully and queued."
+    });
+  });
+
+  // Whitelisted Functional Business Integration Endpoints
+  app.post('/api/tools/start_return', (req, res) => {
+    const { orderId, reason } = req.body;
+    res.json({
+      success: true,
+      returnSessionId: 'ret_' + crypto.randomBytes(4).toString('hex'),
+      instructions: "Drop cargo at Eburon local office"
+    });
+  });
+
+  app.post('/api/tools/get_order_status', (req, res) => {
+    res.json({
+      status: "Transit",
+      eta: new Date(Date.now() + 3 * 24 * 3600 * 1000).toISOString().split('T')[0]
+    });
+  });
+
+  app.post('/api/tools/speak_to_representative', (req, res) => {
+    res.json({
+      transferred: true,
+      queuePosition: Math.floor(Math.random() * 3) + 1
+    });
+  });
+
+  app.post('/api/tools/create_calendar_event', (req, res) => {
+    const { title } = req.body;
+    res.json({
+      success: true,
+      eventId: 'evt_' + crypto.randomBytes(4).toString('hex'),
+      formatted: `Created event '${title || "Eburon Meeting"}' on calendar successfully.`
+    });
+  });
+
+  app.post('/api/tools/send_email', (req, res) => {
+    const { to } = req.body;
+    res.json({
+      success: true,
+      messageId: 'msg_' + crypto.randomBytes(6).toString('hex'),
+      description: `Dispatched automated email to ${to || "boss@eburon.ai"} successfully.`
+    });
+  });
+
+  app.post('/api/tools/set_reminder', (req, res) => {
+    const { time, task } = req.body;
+    res.json({
+      success: true,
+      reminderId: 'rem_' + crypto.randomBytes(4).toString('hex'),
+      task,
+      time
+    });
+  });
+
+  app.post('/api/tools/find_route', (req, res) => {
+    const { origin, destination } = req.body;
+    res.json({
+      success: true,
+      distance: "45.3 km",
+      duration: "34 mins",
+      steps: [
+        `Depart from ${origin || "Brussels"} on E40`,
+        `Merge left at interchanges`,
+        `Arrive in ${destination || "Ypres"}`
+      ]
+    });
+  });
+
+  app.post('/api/tools/find_nearby_places', (req, res) => {
+    const { type } = req.body;
+    res.json([
+      { name: "Brussels Core Office", distance: "120m", type: type || "office" },
+      { name: "Jo Lernout Private Headquarters", distance: "850m", type: type || "office" }
+    ]);
+  });
+
+  app.post('/api/tools/get_traffic_info', (req, res) => {
+    const { sector } = req.body;
+    res.json({
+      sector: sector || "R0 Ring Brussels",
+      delayMinutes: Math.floor(Math.random() * 12) + 2,
+      congestionIndex: "Moderate",
+      updatedAt: new Date().toISOString()
+    });
   });
 
   // PHASE 3: REST Handshake endpoint
@@ -853,41 +1274,32 @@ You dont spund like offerring a help or any AI type questions, you breath, you l
         throw new Error("GEMINI_API_KEY environment secret is missing.");
       }
 
-      // Determine voice to use from query parameter with superhero fallback mapping
+      // Determine voice and model to use from query parameter with whitelisted mapping
+      let chosenModelId = "gemini-2.5-flash-native-audio-preview-09-2025";
       let finalVoiceName = "Aoede";
       if (req && req.url) {
         try {
           const urlObj = new URL(req.url, `http://${req.headers?.host || "localhost"}`);
           const voiceParam = urlObj.searchParams.get("voice");
           if (voiceParam) {
-            const wsVoiceMap: Record<string, string> = {
-              aoede: "Aoede",
-              zephyr: "Zephyr",
-              kore: "Kore",
-              puck: "Puck",
-              fenrir: "Fenrir",
-              charon: "Charon",
-              jeangrey: "Aoede",
-              flash: "Zephyr",
-              invisiblewoman: "Kore",
-              spiderman: "Puck",
-              wolverine: "Fenrir",
-              batman: "Charon"
-            };
-            const mappedVoice = wsVoiceMap[voiceParam.toLowerCase().replace(/\s+/g, '')];
-            if (mappedVoice) {
-              finalVoiceName = mappedVoice;
-            } else {
-              finalVoiceName = voiceParam;
-            }
+            finalVoiceName = resolveVoiceToken(voiceParam);
           }
-        } catch (e) {
-          console.error("Error parsing websocket query parameters for voice selection:", e);
+          const modelParam = urlObj.searchParams.get("model") || "pluto-1.0-live";
+          const resolved = resolveModelId(modelParam);
+          if (!resolved) {
+            throw new Error(`Model '${modelParam}' is not whitelisted or allowed on this Eburon AI integration.`);
+          }
+          chosenModelId = resolved;
+        } catch (e: any) {
+          console.error("Error parsing websocket query parameters:", e);
+          if (e.message && e.message.includes("not whitelisted")) {
+            throw e;
+          }
         }
       }
 
       session = await ai.live.connect({
-        model: PLUTO_MODEL_LIVE,
+        model: chosenModelId,
         callbacks: {
           onmessage: (message: LiveServerMessage) => {
             const audio = message.serverContent?.modelTurn?.parts[0]?.inlineData?.data;

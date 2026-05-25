@@ -1,0 +1,571 @@
+import React, { useState } from 'react';
+import { Copy, Check, ShieldCheck, Play, HelpCircle, Code, ListFilter, Cpu, Radio, Activity } from 'lucide-react';
+import { voiceRegistry } from '../voiceRegistry';
+import { modelRegistry, decodeBase64 } from '../modelRegistry';
+import { outputRegistry } from '../outputRegistry';
+
+interface EndpointSpec {
+  path: string;
+  method: 'GET' | 'POST';
+  purpose: string;
+  requestBody?: string;
+  responseBody: string;
+  streaming?: string;
+  outputs?: string;
+  curl: string;
+}
+
+const endpointCollection: EndpointSpec[] = [
+  // connection / handshakes
+  {
+    path: '/api/live/connect',
+    method: 'POST',
+    purpose: 'Handshake to establish a secure Eburon Pluto 1.0 session environment on the backend with whitelisted model and voice credentials.',
+    requestBody: `{\n  "model": "pluto-1.0-live",\n  "voiceToken": "WmVwaHly",\n  "responseModalities": ["audio"],\n  "inputAudioTranscription": true,\n  "outputAudioTranscription": true\n}`,
+    responseBody: `{\n  "success": true,\n  "sessionId": "session_8921df3a",\n  "message": "Connected successfully to Eburon Live Audio Pluto 1.0 pipeline"\n}`,
+    streaming: 'None',
+    outputs: 'Error Notification, Model Content',
+    curl: `curl -X POST "http://localhost:3000/api/live/connect" \\\n  -H "Content-Type: application/json" \\\n  -d '{\n    "model": "pluto-1.0-live",\n    "voiceToken": "WmVwaHly",\n    "responseModalities": ["audio"],\n    "inputAudioTranscription": true,\n    "outputAudioTranscription": true\n  }'`
+  },
+  {
+    path: '/api/live/disconnect',
+    method: 'POST',
+    purpose: 'Teardown the active Eburon pipeline context and free allocated socket resources.',
+    requestBody: `{\n  "sessionId": "session_123"\n}`,
+    responseBody: `{\n  "success": true,\n  "message": "Session context disconnected"\n}`,
+    streaming: 'None',
+    outputs: 'None',
+    curl: `curl -X POST "http://localhost:3000/api/live/disconnect" \\\n  -H "Content-Type: application/json" \\\n  -d '{\n    "sessionId": "session_123"\n  }'`
+  },
+  {
+    path: '/api/live/send-text',
+    method: 'POST',
+    purpose: 'Insert text queries into the live session turn conversation pool.',
+    requestBody: `{\n  "sessionId": "session_123",\n  "text": "Hello Pluto, introduce yourself as an Eburon AI voice agent.",\n  "turnComplete": true\n}`,
+    responseBody: `{\n  "status": "queued",\n  "turnId": "turn_ebd93"\n}`,
+    streaming: 'Asynchronous text/audio stream response',
+    outputs: 'Text Output, Output Transcript, Audio Output',
+    curl: `curl -X POST "http://localhost:3000/api/live/send-text" \\\n  -H "Content-Type: application/json" \\\n  -d '{\n    "sessionId": "session_123",\n    "text": "Hello Pluto, introduce yourself as an Eburon AI voice agent.",\n    "turnComplete": true\n  }'`
+  },
+  {
+    path: '/api/live/send-audio-chunk',
+    method: 'POST',
+    purpose: 'Feed microphone voice chunks into the pipeline as base64-encoded PCM packets.',
+    requestBody: `{\n  "sessionId": "session_123",\n  "mimeType": "audio/pcm;rate=16000",\n  "audioBase64": "UklGRiYAAAB..."\n}`,
+    responseBody: `{\n  "success": true,\n  "bytesReceived": 10240\n}`,
+    streaming: 'Direct acoustic ingestion stream parameters',
+    outputs: 'Input Transcript',
+    curl: `curl -X POST "http://localhost:3000/api/live/send-audio-chunk" \\\n  -H "Content-Type: application/json" \\\n  -d '{\n    "sessionId": "session_123",\n    "mimeType": "audio/pcm;rate=16000",\n    "audioBase64": "BASE64_PCM_AUDIO_CHUNK"\n  }'`
+  },
+  {
+    path: '/api/live/tool-response',
+    method: 'POST',
+    purpose: 'Return status output fields back into the session context from requested function targets.',
+    requestBody: `{\n  "sessionId": "session_123",\n  "callId": "call_abc123",\n  "response": {\n    "status": "transit",\n    "eta": "2 days"\n  }\n}`,
+    responseBody: `{\n  "status": "acknowledged"\n}`,
+    streaming: 'Triggers matching turns synthesis',
+    outputs: 'Tool Response',
+    curl: `curl -X POST "http://localhost:3000/api/live/tool-response" \\\n  -H "Content-Type: application/json" \\\n  -d '{\n    "sessionId": "session_123",\n    "callId": "call_abc123",\n    "response": {\n      "status": "transit",\n      "eta": "2 days"\n    }\n  }'`
+  },
+  {
+    path: '/api/live/events',
+    method: 'GET',
+    purpose: ' डाउन-स्ट्रीम (Downstream) server-sent event path providing real-time transcripts and model event logs.',
+    responseBody: `text/event-stream\n\nevent: model_content\\ndata: {"message": "Active SSE stream connect"}\\n\\nevent: turn_complete\\ndata: {"timestamp": 1716616010029}`,
+    streaming: 'Continuous Server Sent Events stream channel',
+    outputs: 'input_transcript, output_transcript, tool_call, error, turn_complete',
+    curl: `curl -N "http://localhost:3000/api/live/events?sessionId=session_123"`
+  },
+  {
+    path: '/api/live/audio-stream',
+    method: 'GET',
+    purpose: 'Downstream binary output audio feed stream returning 24kHz raw audio/pcm segments.',
+    responseBody: `binary/octet-stream (raw audio byte sequences)`,
+    streaming: 'Real-time binary chunk audio playback flow',
+    outputs: 'audio_stream',
+    curl: `curl -N "http://localhost:3000/api/live/audio-stream?sessionId=session_123"`
+  },
+  {
+    path: '/api/live/transcripts',
+    method: 'GET',
+    purpose: 'Retrieve conversational transcripts historical logs for the active session context.',
+    responseBody: `[\n  { "role": "user", "content": "Maneer, start Eburon test.", "timestamp": 1716616010000 },\n  { "role": "assistant", "content": "Understood, connecting to Skyblade registry.", "timestamp": 1716616012000 }\n]`,
+    streaming: 'Static historic retrieval JSON structure',
+    outputs: 'input_transcript, output_transcript',
+    curl: `curl -X GET "http://localhost:3000/api/live/transcripts?sessionId=session_123"`
+  },
+  {
+    path: '/api/live/video-stream',
+    method: 'POST',
+    purpose: 'Initialize high-throughput h264/VP8 video streaming segments or connect WebSDK elements for real-time visual grounding with Pluto 1.0.',
+    requestBody: `{\n  "sessionId": "session_123",\n  "streamId": "vs_8932a",\n  "resolution": "720p",\n  "fps": 30,\n  "codec": "VP8"\n}`,
+    responseBody: `{\n  "success": true,\n  "endpoint": "webrtc://live.eburon.ai:3000/live/session_123",\n  "authToken": "webrtc_stream_auth_token_9021a",\n  "message": "Eburon Live Video Ingestion pipeline channel initialized"\n}`,
+    streaming: 'Real-time video/h264 media stream channel',
+    outputs: 'video_websdk_stream',
+    curl: `curl -X POST "http://localhost:3000/api/live/video-stream" \\\n  -H "Content-Type: application/json" \\\n  -d '{\n    "sessionId": "session_123",\n    "streamId": "vs_8932a",\n    "resolution": "720p",\n    "fps": 30,\n    "codec": "VP8"\n  }'`
+  },
+  {
+    path: '/api/live/screen-share',
+    method: 'POST',
+    purpose: 'Transmit viewport frame updates or bounding canvas details for screen-grounded visual analysis and interactive feedback loops.',
+    requestBody: `{\n  "sessionId": "session_123",\n  "source": "entire_screen",\n  "fps": 5,\n  "compressRatio": 0.8\n}`,
+    responseBody: `{\n  "success": true,\n  "shareId": "screen_4812a",\n  "status": "sharing",\n  "frameBufferSize": 204800,\n  "instructions": "Send frames sequentially as Base64 JPEG chunks via WebSocket or REST chunk pipelines."\n}`,
+    streaming: 'Asynchronous periodic viewport frames channel',
+    outputs: 'screenshare_active',
+    curl: `curl -X POST "http://localhost:3000/api/live/screen-share" \\\n  -H "Content-Type: application/json" \\\n  -d '{\n    "sessionId": "session_123",\n    "source": "entire_screen",\n    "fps": 5,\n    "compressRatio": 0.8\n  }'`
+  },
+
+  // business tools
+  {
+    path: '/api/tools/start_return',
+    method: 'POST',
+    purpose: 'Trigger return session workflows on business orders.',
+    requestBody: `{\n  "orderId": "100231",\n  "reason": "Wrong item delivered"\n}`,
+    responseBody: `{\n  "success": true,\n  "returnSessionId": "ret_9831a20",\n  "instructions": "Drop cargo at Eburon local office"\n}`,
+    outputs: 'return_request_started',
+    curl: `curl -X POST "http://localhost:3000/api/tools/start_return" \\\n  -H "Content-Type: application/json" \\\n  -d '{\n    "orderId": "100231",\n    "reason": "Wrong item delivered"\n  }'`
+  },
+  {
+    path: '/api/tools/get_order_status',
+    method: 'POST',
+    purpose: 'Request active statuses and parcel delivery updates.',
+    requestBody: `{\n  "orderId": "100231"\n}`,
+    responseBody: `{\n  "status": "Transit",\n  "eta": "2026-05-28"\n}`,
+    outputs: 'order_status_result',
+    curl: `curl -X POST "http://localhost:3000/api/tools/get_order_status" \\\n  -H "Content-Type: application/json" \\\n  -d '{\n    "orderId": "100231"\n  }'`
+  },
+  {
+    path: '/api/tools/speak_to_representative',
+    method: 'POST',
+    purpose: 'Initiate context transfers and route lines to live representative queues.',
+    requestBody: `{\n  "sessionId": "session_123"\n}`,
+    responseBody: `{\n  "transferred": true,\n  "queuePosition": 2\n}`,
+    outputs: 'representative_handoff',
+    curl: `curl -X POST "http://localhost:3000/api/tools/speak_to_representative" \\\n  -H "Content-Type: application/json" \\\n  -d '{\n    "sessionId": "session_123"\n  }'`
+  },
+  {
+    path: '/api/tools/create_calendar_event',
+    method: 'POST',
+    purpose: 'Request immediate calendar entry placement for team syncing.',
+    requestBody: `{\n  "title": "Eburon AI Briefing with Jo",\n  "startTime": "2026-05-26T10:00:00Z",\n  "endTime": "2026-05-26T11:00:00Z"\n}`,
+    responseBody: `{\n  "success": true,\n  "eventId": "evt_0918b",\n  "formatted": "Created event Successfully."\n}`,
+    outputs: 'calendar_event_created',
+    curl: `curl -X POST "http://localhost:3000/api/tools/create_calendar_event" \\\n  -H "Content-Type: application/json" \\\n  -d '{\n    "title": "Eburon AI Briefing with Jo",\n    "startTime": "2526-05-26T10:00:00Z",\n    "endTime": "2526-05-26T11:00:00Z"\n  }'`
+  },
+  {
+    path: '/api/tools/send_email',
+    method: 'POST',
+    purpose: 'Dispatch preconfigured email layouts or draft entries immediately.',
+    requestBody: `{\n  "to": "boss@eburon.ai",\n  "subject": "Eburon active summary",\n  "body": "System calibrated."\n}`,
+    responseBody: `{\n  "success": true,\n  "messageId": "msg_bc2931"\n}`,
+    outputs: 'email_draft_or_sent',
+    curl: `curl -X POST "http://localhost:3000/api/tools/send_email" \\\n  -H "Content-Type: application/json" \\\n  -d '{\n    "to": "boss@eburon.ai",\n    "subject": "Eburon active summary",\n    "body": "System calibrated."\n  }'`
+  },
+  {
+    path: '/api/tools/set_reminder',
+    method: 'POST',
+    purpose: 'Establish system alarms and scheduled action triggers.',
+    requestBody: `{\n  "time": "2026-05-25T18:00:00Z",\n  "task": "Review handoffs"\n}`,
+    responseBody: `{\n  "success": true,\n  "reminderId": "rem_8921b"\n}`,
+    outputs: 'reminder_created',
+    curl: `curl -X POST "http://localhost:3000/api/tools/set_reminder" \\\n  -H "Content-Type: application/json" \\\n  -d '{\n    "time": "2026-05-25T18:00:00Z",\n    "task": "Review handoffs"\n  }'`
+  },
+  {
+    path: '/api/tools/find_route',
+    method: 'POST',
+    purpose: 'Compute optimal paths and directions coordinates indices.',
+    requestBody: `{\n  "origin": "Brussels",\n  "destination": "Ypres"\n}`,
+    responseBody: `{\n  "success": true,\n  "distance": "45.3 km",\n  "duration": "34 mins",\n  "steps": ["Depart origin", "Arrive destination"]\n}`,
+    outputs: 'route_result',
+    curl: `curl -X POST "http://localhost:3000/api/tools/find_route" \\\n  -H "Content-Type: application/json" \\\n  -d '{\n    "origin": "Brussels",\n    "destination": "Ypres"\n  }'`
+  },
+  {
+    path: '/api/tools/find_nearby_places',
+    method: 'POST',
+    purpose: 'Query places coordinates around client sectors.',
+    requestBody: `{\n  "location": "50.85,4.35",\n  "type": "office"\n}`,
+    responseBody: `[\n  { "name": "Brussels Core Office", "distance": "120m" }\n]`,
+    outputs: 'nearby_places_result',
+    curl: `curl -X POST "http://localhost:3000/api/tools/find_nearby_places" \\\n  -H "Content-Type: application/json" \\\n  -d '{\n    "location": "50.85,4.35",\n    "type": "office"\n  }'`
+  },
+  {
+    path: '/api/tools/get_traffic_info',
+    method: 'POST',
+    purpose: 'Fetch delay margins statistics on transport corridors.',
+    requestBody: `{\n  "sector": "R0 Ring Brussels"\n}`,
+    responseBody: `{\n  "sector": "R0 Ring",\n  "congestionIndex": "Moderate",\n  "delayMinutes": 8\n}`,
+    outputs: 'traffic_info_result',
+    curl: `curl -X POST "http://localhost:3000/api/tools/get_traffic_info" \\\n  -H "Content-Type: application/json" \\\n  -d '{\n    "sector": "R0 Ring Brussels"\n  }'`
+  },
+
+  // configuration
+  {
+    path: '/api/config/models',
+    method: 'GET',
+    purpose: 'Retrieve public model entities whitelisted under active integration scopes.',
+    responseBody: `[\n  {\n    "publicName": "Pluto 1.0",\n    "publicModelId": "pluto-1.0-live",\n    "provider": "google-gemini-live-audio",\n    "status": "whitelisted"\n  }\n]`,
+    outputs: 'None',
+    curl: `curl -X GET "http://localhost:3000/api/config/models"`
+  },
+  {
+    path: '/api/config/voices',
+    method: 'GET',
+    purpose: 'Expose only frontend-safe superhero voice aliases with corresponding base64 tokens.',
+    responseBody: `[\n  {\n    "displayName": "Skyblade",\n    "voiceToken": "WmVwaHly",\n    "enabled": true\n  }\n]`,
+    outputs: 'None',
+    curl: `curl -X GET "http://localhost:3000/api/config/voices"`
+  },
+  {
+    path: '/api/config/system-prompt',
+    method: 'POST',
+    purpose: 'Overwrite the default internal system instruction prompts for subsequent session parameters.',
+    requestBody: `{\n  "prompt": "You are a highly capable agent."\n}`,
+    responseBody: `{\n  "status": "updated",\n  "prompt": "You are a highly capable agent."\n}`,
+    outputs: 'None',
+    curl: `curl -X POST "http://localhost:3000/api/config/system-prompt" \\\n  -H "Content-Type: application/json" \\\n  -d '{\n    "prompt": "You are a highly capable agent."\n  }'`
+  },
+  {
+    path: '/api/config/output-registry',
+    method: 'GET',
+    purpose: 'Return deep details, label schemas, and sample properties for all 21 system signals.',
+    responseBody: `[\n  {\n    "id": "audio_output",\n    "label": "Audio Output",\n    "description": "PCM audio generated by Pluto 1.0 Live.",\n    "transport": "stream",\n    "mimeType": "audio/pcm",\n    "sampleRate": 24000\n  }\n]`,
+    outputs: 'None',
+    curl: `curl -X GET "http://localhost:3000/api/config/output-registry"`
+  }
+];
+
+export default function DeveloperSuite() {
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [filterMethod, setFilterMethod] = useState<'ALL' | 'GET' | 'POST'>('ALL');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const triggerCopy = (text: string, id: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const playTTSPreview = (voiceName: string) => {
+    try {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(`Hello Maneer, I am code name ${voiceName}. Actively connected to Eburon AI model line, ready to receive commands.`);
+        utterance.rate = 0.95;
+        window.speechSynthesis.speak(utterance);
+      } else {
+        alert("Speech synthesis is not supported on this device/iFrame configuration.");
+      }
+    } catch {
+      // ignore
+    }
+  };
+
+  const filteredEndpoints = endpointCollection.filter(spec => {
+    const matchesMethod = filterMethod === 'ALL' || spec.method === filterMethod;
+    const matchesQuery = spec.path.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                         spec.purpose.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesMethod && matchesQuery;
+  });
+
+  return (
+    <div className="space-y-10 animate-fade-in text-[#3b4151]">
+      
+      {/* 1. Whitelisted Models Registry */}
+      <section className="bg-white rounded border border-[#e8e8e8] shadow-sm p-6 space-y-4">
+        <div className="flex items-center gap-2.5 border-b border-gray-100 pb-3">
+          <Cpu className="w-5 h-5 text-[#89bf04]" />
+          <h2 className="text-xl font-extrabold tracking-tight text-gray-800">1. Whitelisted Models Registry (Pluto 1.0 Alias)</h2>
+        </div>
+        <p className="text-xs text-gray-500 max-w-2xl leading-relaxed">
+          The Eburon AI gateway strictly enforces whitelist filters. Any client requesting non-whitelisted platforms gets immediately rejected. Pluto-specified models mapped securely:
+        </p>
+
+        <div className="overflow-x-auto border border-gray-100 rounded-lg">
+          <table className="w-full text-left border-collapse text-xs">
+            <thead>
+              <tr className="bg-gray-50 font-bold border-b border-gray-100 text-gray-600">
+                <th className="p-3">Public Name</th>
+                <th className="p-3">Public Model ID</th>
+                <th className="p-3">Provider Provider ID</th>
+                <th className="p-3">Status</th>
+                <th className="p-3">Owner</th>
+              </tr>
+            </thead>
+            <tbody>
+              {modelRegistry.map((m) => (
+                <tr key={m.publicModelId} className="hover:bg-gray-50/50 border-b border-gray-100 font-mono text-gray-700">
+                  <td className="p-3 font-sans font-bold text-gray-800">{m.publicName}</td>
+                  <td className="p-3 text-blue-600 font-semibold">{m.publicModelId}</td>
+                  <td className="p-3 text-gray-400">
+                    <div className="flex flex-col">
+                      <span className="text-[10px] font-mono font-bold text-gray-500 bg-gray-100 border px-1 py-0.5 rounded truncate max-w-[180px] select-all" title="Base64 Shielded Identifier">
+                        {m.providerModelId}
+                      </span>
+                      <span className="blur-[1.5px] hover:blur-none transition-all text-[9.5px] text-gray-500 block cursor-help select-none mt-1 font-bold" title="Hover to Decrypt Original Platform Identity">
+                        Decrypted: {decodeBase64(m.providerModelId)}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="p-3">
+                    <span className="bg-green-50 text-green-700 border border-green-200 text-[10px] font-black uppercase px-2 py-0.5 rounded">
+                      {m.status}
+                    </span>
+                  </td>
+                  <td className="p-3 font-sans text-gray-500">{m.owner}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      {/* 2. Supported Superheroes Voice Mappings (Base64 Shielded) */}
+      <section className="bg-white rounded border border-[#e8e8e8] shadow-sm p-6 space-y-4">
+        <div className="flex items-center gap-2.5 border-b border-gray-100 pb-3">
+          <Radio className="w-5 h-5 text-[#89bf04]" />
+          <h2 className="text-xl font-extrabold tracking-tight text-gray-800">2. Voice Registries (Superhero Identity Tokens)</h2>
+        </div>
+        <p className="text-xs text-gray-500 max-w-2xl leading-relaxed">
+          Original voice signatures are locked. All client interactions pass secure, base64-encoded <span className="font-mono bg-gray-50 border px-1 py-0.5 rounded">voiceTokens</span>. The gateway resolves tokens back to the premium model configurations securely:
+        </p>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          {voiceRegistry.slice(0, 15).map((v) => (
+            <div key={v.voiceToken} className="bg-gray-50/70 border border-gray-200/60 rounded-lg p-3.5 hover:shadow-xs transition-all flex flex-col justify-between gap-3">
+              <div>
+                <div className="flex items-center justify-between">
+                  <span className="font-extrabold text-sm text-gray-800">{v.displayName}</span>
+                  <span className="bg-[#89bf04]/1s border border-[#89bf04]/20 text-[#89bf04] text-[9px] px-1.5 py-0.5 rounded uppercase font-bold">Active</span>
+                </div>
+                <div className="mt-2 text-[11px] space-y-1 font-mono text-gray-500 bg-white border border-gray-100 rounded p-1.5 break-all">
+                  <div className="flex justify-between">
+                    <span>Token:</span>
+                    <span className="text-blue-600 font-bold select-all">{v.voiceToken}</span>
+                  </div>
+                  {copiedId === v.voiceToken && (
+                    <div className="text-[9px] bg-green-50 text-green-700 border border-green-200 p-1 rounded font-mono text-center animate-fade-in mt-1 font-bold">
+                      ✓ Captioned: Voice signature token copied to clipboard!
+                    </div>
+                  )}
+                  <div className="flex justify-between border-t border-gray-50 pt-1 text-[10px] text-gray-400">
+                    <span>Provider ID:</span>
+                    <div className="text-right">
+                      <span className="text-[9px] font-mono text-gray-400 block bg-gray-100 border px-1 rounded max-w-[120px] truncate select-all inline-block mb-1 font-bold" title="Base64 Shielded Identifier">
+                        {v.providerVoiceId}
+                      </span>
+                      <span className="blur-[1px] hover:blur-none transition-all text-[9.5px] text-gray-500 block cursor-help font-bold select-none" title="Hover to Decrypt Original Superhero Identity">
+                        Decrypted: {decodeBase64(v.providerVoiceId)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-2">
+                <button 
+                  onClick={() => triggerCopy(v.voiceToken, v.voiceToken)}
+                  className="flex-1 border border-gray-200 hover:bg-gray-100 bg-white text-gray-600 rounded py-1 text-[11px] font-bold flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  {copiedId === v.voiceToken ? <Check className="w-3.5 h-3.5 text-green-600" /> : <Copy className="w-3.5 h-3.5" />}
+                  <span>{copiedId === v.voiceToken ? 'Copied' : 'Copy Token'}</span>
+                </button>
+                <button 
+                  onClick={() => playTTSPreview(v.displayName)}
+                  className="px-2.5 border border-[#89bf04] hover:bg-[#89bf04]/10 bg-white text-[#89bf04] rounded py-1 flex items-center justify-center cursor-pointer"
+                  title="Play Voice Sample"
+                >
+                  <Play className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          ))}
+          <div className="bg-gray-100/30 border border-dashed border-gray-300 rounded-lg p-3.5 flex items-center justify-center text-center">
+            <p className="text-[11px] text-gray-400 italic font-mono max-w-[200px]">
+              + 17 additional Eburon high fidelity voice profiles whitelisted
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* 3. Central System Output Registry */}
+      <section className="bg-white rounded border border-[#e8e8e8] shadow-sm p-6 space-y-4">
+        <div className="flex items-center gap-2.5 border-b border-gray-100 pb-3">
+          <Activity className="w-5 h-5 text-[#89bf04]" />
+          <h2 className="text-xl font-extrabold tracking-tight text-gray-800">3. Central System Output Registers (21 Unique Signal Vectors)</h2>
+        </div>
+        <p className="text-xs text-gray-500 max-w-2xl leading-relaxed">
+          The Eburon AI system standardizes all outgoings into 21 unique event schemas to assure total platform portability and ease client-side logic binds:
+        </p>
+
+        <div className="max-h-72 overflow-y-auto border border-gray-100 rounded-lg text-xs">
+          <table className="w-full text-left border-collapse">
+            <thead className="sticky top-0 bg-gray-50 font-bold border-b border-gray-100 text-gray-600 z-10">
+              <tr>
+                <th className="p-3 w-1/4">Output Metric ID</th>
+                <th className="p-3 w-1/4">Label Description</th>
+                <th className="p-3 w-1/6">Transport Mechanism</th>
+                <th className="p-3 w-1/6">Mime Standard Type</th>
+                <th className="p-3 text-center">API Targetable</th>
+              </tr>
+            </thead>
+            <tbody>
+              {outputRegistry.map((out) => (
+                <tr key={out.id} className="hover:bg-gray-50/50 border-b border-gray-100">
+                  <td className="p-3 font-mono font-bold text-gray-800">{out.id}</td>
+                  <td className="p-3">
+                    <span className="font-bold block text-gray-700">{out.label}</span>
+                    <span className="text-[10px] text-gray-500 block leading-relaxed">{out.description}</span>
+                  </td>
+                  <td className="p-3 font-mono text-gray-500">
+                    <span className="bg-blue-50 text-blue-800 px-2 py-0.5 rounded text-[10px] uppercase font-bold border border-blue-100">
+                      {out.transport}
+                    </span>
+                  </td>
+                  <td className="p-3 font-mono text-gray-400 text-[11px]">{out.mimeType} {out.sampleRate && `• ${out.sampleRate}Hz`}</td>
+                  <td className="p-3 text-center">
+                    {out.canBecomeApiCall ? (
+                      <span className="text-[10px] uppercase font-black text-green-700 bg-green-50 border border-green-100 px-1.5 py-0.5 rounded inline-block">Yes</span>
+                    ) : (
+                      <span className="text-[10px] uppercase font-semibold text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded inline-block">Local</span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      {/* 4. Complete cURL Examples Panel */}
+      <section className="bg-white rounded border border-[#e8e8e8] shadow-sm p-6 space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 pb-4">
+          <div className="flex items-center gap-2.5">
+            <Code className="w-5 h-5 text-[#89bf04]" />
+            <h2 className="text-xl font-extrabold tracking-tight text-gray-800">4. Developer Endpoint specifications & cURL Index</h2>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <div className="flex border border-gray-200 rounded overflow-hidden text-xs">
+              {(['ALL', 'GET', 'POST'] as const).map(m => (
+                <button
+                  key={m}
+                  onClick={() => setFilterMethod(m)}
+                  className={`px-3 py-1 font-bold ${filterMethod === m ? 'bg-gray-100 text-gray-800' : 'bg-white text-gray-400 hover:text-gray-600'}`}
+                >
+                  {m}
+                </button>
+              ))}
+            </div>
+            <input 
+              type="text" 
+              placeholder="Search pathways..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="text-xs border border-gray-300 rounded p-1 px-2.5 outline-none font-mono focus:border-blue-400"
+            />
+          </div>
+        </div>
+
+        <div className="space-y-6">
+          {filteredEndpoints.map((spec, idx) => (
+            <div key={idx} className="border border-gray-200 rounded-lg overflow-hidden hover:border-[#89bf04]/50 transition-all shadow-xs">
+              {/* Header */}
+              <div className="bg-gray-50 px-4 py-3 border-b border-gray-200 flex flex-wrap items-center justify-between gap-3 text-xs">
+                <div className="flex items-center gap-2 font-mono">
+                  <span className={`font-black text-[10px] uppercase px-2 py-0.5 rounded text-white ${spec.method === 'POST' ? 'bg-[#49cc90]' : 'bg-[#50a3f2]'}`}>
+                    {spec.method}
+                  </span>
+                  <span className="font-extrabold text-gray-800 text-sm">{spec.path}</span>
+                </div>
+                <div className="text-[10px] text-gray-400 font-sans tracking-wide">
+                  Endpoint index {idx + 1} of 21 (Eburon Whitelisted)
+                </div>
+              </div>
+
+              {/* Params and Code block body */}
+              <div className="p-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
+                
+                {/* Left side details */}
+                <div className="space-y-4 text-xs font-sans">
+                  <div>
+                    <h5 className="font-extrabold text-gray-500 uppercase text-[10px] tracking-wider mb-1">Method Description</h5>
+                    <p className="text-gray-700 leading-relaxed text-[11px] font-medium">{spec.purpose}</p>
+                  </div>
+
+                  {spec.requestBody && (
+                    <div>
+                      <h5 className="font-extrabold text-gray-500 uppercase text-[10px] tracking-wider mb-1">Sample Request PAYLOAD (JSON)</h5>
+                      <pre className="bg-gray-50 border border-gray-150 p-2.5 rounded font-mono text-[10px] text-gray-600 whitespace-pre overflow-auto max-h-36">
+                        {spec.requestBody}
+                      </pre>
+                    </div>
+                  )}
+
+                  <div>
+                    <h5 className="font-extrabold text-gray-500 uppercase text-[10px] tracking-wider mb-1">Standard Response Form</h5>
+                    <pre className="bg-gray-50 border border-gray-150 p-2.5 rounded font-mono text-[10px] text-gray-600 whitespace-pre overflow-auto max-h-36">
+                      {spec.responseBody}
+                    </pre>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2 text-[10px] pt-1">
+                    {spec.streaming && spec.streaming !== 'None' && (
+                      <span className="bg-yellow-50 text-yellow-800 border border-yellow-100 px-2 py-0.5 rounded font-mono font-bold">
+                        Stream: {spec.streaming}
+                      </span>
+                    )}
+                    {spec.outputs && spec.outputs !== 'None' && (
+                      <span className="bg-purple-50 text-purple-800 border border-purple-100 px-2 py-0.5 rounded font-mono font-bold">
+                        Emits Output Vector: {spec.outputs}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Right side copyable cURL */}
+                <div className="flex flex-col justify-between bg-[#292a2b] rounded-lg p-3 text-white overflow-hidden">
+                  <div className="flex items-center justify-between border-b border-gray-700/60 pb-1.5 mb-2.5 text-[10px] font-mono tracking-wider uppercase text-gray-400">
+                    <span>Target Sandbox cURL Example</span>
+                    <button
+                      onClick={() => triggerCopy(spec.curl, spec.path)}
+                      className="text-gray-400 hover:text-white flex items-center gap-1 cursor-pointer transition-colors"
+                    >
+                      {copiedId === spec.path ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />}
+                      <span>{copiedId === spec.path ? 'COPIED' : 'COPY'}</span>
+                    </button>
+                  </div>
+                  <pre className="font-mono text-[10.5px] text-[#f8f8f2] leading-relaxed whitespace-pre overflow-auto flex-1 p-1 max-h-80 select-all scrollbar-thin">
+                    {spec.curl}
+                  </pre>
+                  
+                  {/* Dynamic Clipboard Captioned Block */}
+                  <div className="mt-3.5 pt-2.5 border-t border-gray-700/50 flex flex-col gap-1 text-[11px] text-gray-400">
+                    <div className="flex items-center gap-1.5 text-gray-300">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#89bf04] inline-block animate-pulse"></span>
+                      <span className="font-semibold tracking-tight">Active Terminal Clipboard Sync:</span>
+                    </div>
+                    {copiedId === spec.path ? (
+                      <div className="bg-[#89bf04]/20 border border-[#89bf04]/40 text-[#a3e200] p-1.5 rounded font-mono text-[10px] animate-fade-in font-medium">
+                        ✓ CAPTIONED: cURL command copied successfully! Ready to paste and run in your local terminal.
+                      </div>
+                    ) : (
+                      <span className="italic text-[10px] font-mono text-gray-500">Ready. Click "COPY" to buffer exact shell segment for terminal.</span>
+                    )}
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          ))}
+
+          {filteredEndpoints.length === 0 && (
+            <div className="text-center py-10 border border-dashed border-gray-200 rounded bg-gray-50/50">
+              <p className="text-xs text-gray-400 font-mono">No matching whitelisted pathways found in registry.</p>
+            </div>
+          )}
+        </div>
+      </section>
+      
+    </div>
+  );
+}

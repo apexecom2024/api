@@ -1,7 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Square, Settings, Radio, Mic, Key, Check, Info, ChevronDown, ChevronRight, Lock, ExternalLink, RefreshCw } from 'lucide-react';
+import { Play, Square, Settings, Radio, Mic, Key, Check, Info, ChevronDown, ChevronRight, Lock, ExternalLink, RefreshCw, MessageSquare, History, Trash2, Plus, X } from 'lucide-react';
 import clsx from 'clsx';
 import { twMerge } from 'tailwind-merge';
+
+// Whitelisted Eburon AI registries
+import { voiceRegistry } from './voiceRegistry';
+import { modelRegistry } from './modelRegistry';
+import { outputRegistry } from './outputRegistry';
+import DeveloperSuite from './components/DeveloperSuite';
 
 function cn(...inputs: (string | undefined | null | false)[]) {
   return twMerge(clsx(inputs));
@@ -23,6 +29,20 @@ function pcmToBase64(channelData: Float32Array) {
   return btoa(binary);
 }
 
+interface ChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+interface ChatThread {
+  id: string;
+  title: string;
+  temperature: number;
+  model: string;
+  messages: ChatMessage[];
+  createdAt: number;
+}
+
 export default function App() {
   // Swagger general UI state
   const [openapiUrl, setOpenapiUrl] = useState(`${window.location.origin}/openapi.json`);
@@ -31,6 +51,7 @@ export default function App() {
   const [apiKeyVal, setApiKeyVal] = useState('eburon_ephemeral_client_token_prod');
   const [selectedServer, setSelectedServer] = useState(window.location.origin);
   const [defaultSectionExpanded, setDefaultSectionExpanded] = useState(true);
+  const [activeTab, setActiveTab] = useState<'playground' | 'developer-suite'>('playground');
 
   // Endpoint 1: POST /api/session/token
   const [postExpanded, setPostExpanded] = useState(true);
@@ -89,6 +110,17 @@ export default function App() {
   const [chatReqUrl, setChatReqUrl] = useState<string>('');
   const [chatHeaders, setChatHeaders] = useState<string>('');
 
+  const [chatThreads, setChatThreads] = useState<ChatThread[]>(() => {
+    try {
+      const saved = localStorage.getItem('eburon_chat_threads');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+
   // Endpoint 4: POST /v1/audio/speech
   const [speechExpanded, setSpeechExpanded] = useState(false);
   const [speechTryItOut, setSpeechTryItOut] = useState(false);
@@ -115,7 +147,7 @@ export default function App() {
   const [transRecordTimer, setTransRecordTimer] = useState(0);
 
   // Endpoint 2: WS /ws/live-audio
-  const [wsVoice, setWsVoice] = useState('Aoede');
+  const [wsVoice, setWsVoice] = useState('WmVwaHly');
 
   // Endpoint 6: POST /v1/images/generations
   const [imagesExpanded, setImagesExpanded] = useState(false);
@@ -245,6 +277,11 @@ export default function App() {
     }
   }, [voiceLogs]);
 
+  // Persist chat threads on change
+  useEffect(() => {
+    localStorage.setItem('eburon_chat_threads', JSON.stringify(chatThreads));
+  }, [chatThreads]);
+
   // Handle CSS-based microphone wave animation
   useEffect(() => {
     if (isRecording) {
@@ -273,11 +310,29 @@ export default function App() {
 
   // Execute Compatible Chat Completions
   const executeChatCompletion = async () => {
+    if (!chatInput.trim()) return;
     setChatExecuting(true);
+
+    let threadId = activeThreadId;
+    let updatedMessages: ChatMessage[] = [];
+    const newUserMessage: ChatMessage = { role: 'user', content: chatInput };
+
+    if (!threadId) {
+      threadId = Math.random().toString(36).substring(7);
+      updatedMessages = [newUserMessage];
+    } else {
+      const thread = chatThreads.find(t => t.id === threadId);
+      if (thread) {
+        updatedMessages = [...thread.messages, newUserMessage];
+      } else {
+        updatedMessages = [newUserMessage];
+      }
+    }
+
     const targetUrl = `${selectedServer}/v1/chat/completions`;
     setChatReqUrl(targetUrl);
     setChatCurl(
-      `curl -X 'POST' \\\n  '${targetUrl}' \\\n  -H 'accept: application/json' \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n  "messages": [\n    {\n      "role": "user",\n      "content": "${chatInput.replace(/"/g, '\\"').replace(/\n/g, '\\n')}"\n    }\n  ],\n  "model": "${chatModel}",\n  "temperature": ${chatTemperature}\n}'`
+      `curl -X 'POST' \\\n  '${targetUrl}' \\\n  -H 'accept: application/json' \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n  "messages": ${JSON.stringify(updatedMessages, null, 2).replace(/\n/g, '\n  ')},\n  "model": "${chatModel}",\n  "temperature": ${chatTemperature}\n}'`
     );
 
     try {
@@ -289,7 +344,7 @@ export default function App() {
           'Accept': 'application/json'
         },
         body: JSON.stringify({
-          messages: [{ role: 'user', content: chatInput }],
+          messages: updatedMessages,
           model: chatModel,
           temperature: chatTemperature
         })
@@ -300,8 +355,38 @@ export default function App() {
 
       const data = await res.json();
       setChatResponse(data);
-      if (data?.choices?.[0]?.message?.content) {
-        addLog('server', `Chat response parsed: "${data.choices[0].message.content.slice(0, 40)}..."`);
+
+      if (data?.choices?.[0]?.message) {
+        const assistantMessage = data.choices[0].message;
+        const newAssistantMessage: ChatMessage = {
+          role: 'assistant',
+          content: assistantMessage.content || ''
+        };
+        const finalMessages = [...updatedMessages, newAssistantMessage];
+
+        setChatThreads(prev => {
+          const found = prev.find(t => t.id === threadId);
+          if (found) {
+            return prev.map(t => t.id === threadId ? { ...t, messages: finalMessages } : t);
+          } else {
+            const title = chatInput.slice(0, 45) + (chatInput.length > 45 ? '...' : '');
+            const newThread: ChatThread = {
+              id: threadId!,
+              title,
+              temperature: chatTemperature,
+              model: chatModel,
+              messages: finalMessages,
+              createdAt: Date.now()
+            };
+            return [newThread, ...prev];
+          }
+        });
+
+        setActiveThreadId(threadId);
+        setChatInput(''); // Clear input to enable flowing turn conversation details
+        addLog('server', `Chat response parsed: "${assistantMessage.content.slice(0, 40)}..."`);
+      } else if (data?.error) {
+        addLog('error', `Chat error response: ${typeof data.error === 'object' ? data.error.message || JSON.stringify(data.error) : data.error}`);
       }
     } catch (e: any) {
       console.error(e);
@@ -1105,8 +1190,37 @@ export default function App() {
           </div>
         </section>
 
-        {/* Tag block */}
-        <section className="bg-white rounded border border-[#e8e8e8] overflow-hidden shadow-sm">
+        {/* Navigation Tabs Switcher */}
+        <div className="flex border-b border-gray-200">
+          <button
+            onClick={() => setActiveTab('playground')}
+            className={cn(
+              "px-5 py-3 font-semibold text-sm transition-all border-b-2 cursor-pointer outline-none",
+              activeTab === 'playground'
+                ? "border-[#89bf04] text-[#89bf04] bg-[#89bf04]/5 font-bold"
+                : "border-transparent text-gray-500 hover:text-gray-900 hover:bg-gray-50"
+            )}
+          >
+            Interactive OpenAPI Sandbox
+          </button>
+          <button
+            onClick={() => setActiveTab('developer-suite')}
+            className={cn(
+              "px-5 py-3 font-semibold text-sm transition-all border-b-2 cursor-pointer outline-none flex items-center gap-1.5",
+              activeTab === 'developer-suite'
+                ? "border-[#89bf04] text-[#89bf04] bg-[#89bf04]/5 font-bold"
+                : "border-transparent text-gray-500 hover:text-gray-900 hover:bg-gray-50"
+            )}
+          >
+            <Settings className="w-4 h-4 text-[#89bf04]" />
+            Eburon AI Platform & cURL Registry
+          </button>
+        </div>
+
+        {activeTab === 'playground' ? (
+          <>
+            {/* Tag block */}
+            <section className="bg-white rounded border border-[#e8e8e8] overflow-hidden shadow-sm">
           <div 
             onClick={() => setDefaultSectionExpanded(!defaultSectionExpanded)}
             className="bg-gray-50 px-4 py-3 border-b border-gray-100 flex items-center justify-between cursor-pointer hover:bg-gray-100/70 select-none"
@@ -1393,12 +1507,11 @@ export default function App() {
                                 onChange={(e) => setWsVoice(e.target.value)}
                                 className="text-xs font-mono p-1 px-2 border border-gray-300 rounded bg-white outline-none focus:ring-1 focus:ring-orange-400 max-w-[240px]"
                               >
-                                <option value="Aoede">Jean Grey</option>
-                                <option value="Zephyr">Flash</option>
-                                <option value="Kore">Invisible Woman</option>
-                                <option value="Puck">Spider-Man</option>
-                                <option value="Fenrir">Wolverine</option>
-                                <option value="Charon">Batman</option>
+                                {voiceRegistry.map((v) => (
+                                  <option key={v.voiceToken} value={v.voiceToken}>
+                                    {v.displayName}
+                                  </option>
+                                ))}
                               </select>
                             </div>
 
@@ -1467,7 +1580,7 @@ export default function App() {
               </div>
 
               {/* ENDPOINT 3: POST /v1/chat/completions */}
-              <div className={cn(
+              <div id="chat-completion-section" className={cn(
                 "border rounded overflow-hidden transition-all duration-200",
                 chatExpanded ? "border-[#49cc90] bg-[#f9fdfa]" : "border-[#49cc90]/40 hover:bg-[#49cc90]/5"
               )}>
@@ -1587,7 +1700,35 @@ export default function App() {
                             </div>
 
                             {/* User & AI conversational view representation */}
-                            {chatResponse?.choices?.[0]?.message?.content && (
+                            {(activeThreadId && chatThreads.find(t => t.id === activeThreadId)) ? (
+                              <div className="mt-4 border border-green-200/50 rounded-lg p-3 bg-green-50/20 font-sans space-y-2 max-h-96 overflow-y-auto">
+                                <div className="flex justify-between items-center text-[11px] uppercase font-bold text-gray-400 tracking-wider border-b border-green-200/20 pb-1.5 mb-2">
+                                  <span>Active Thread View</span>
+                                  <span className="text-[10px] text-zinc-500 font-mono select-none">ID: {activeThreadId}</span>
+                                </div>
+                                <div className="space-y-3">
+                                  {chatThreads.find(t => t.id === activeThreadId)?.messages?.map((m, idx) => (
+                                    <div 
+                                      key={idx} 
+                                      className={cn(
+                                        "flex gap-1.5 items-start text-xs",
+                                        m.role === 'user' ? "text-gray-700" : "text-green-900"
+                                      )}
+                                    >
+                                      <span className={cn("font-extrabold", m.role === 'user' ? "text-[#3b4151]" : "text-green-700")}>
+                                        {m.role === 'user' ? 'User:' : 'Eburon:'}
+                                      </span>
+                                      <p className={cn(
+                                        "rounded px-2.5 py-1.5 flex-1 leading-relaxed whitespace-pre-wrap font-sans",
+                                        m.role === 'user' ? "bg-gray-100/80" : "bg-green-50/50 border border-green-100"
+                                      )}>
+                                        {m.content}
+                                      </p>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            ) : chatResponse?.choices?.[0]?.message?.content ? (
                               <div className="mt-4 border border-green-200/50 rounded-lg p-3 bg-green-50/20 font-sans space-y-2">
                                 <div className="text-[11px] uppercase font-bold text-gray-400 tracking-wider font-sans">Conversational Segment View</div>
                                 <div className="space-y-2">
@@ -1601,7 +1742,7 @@ export default function App() {
                                   </div>
                                 </div>
                               </div>
-                            )}
+                            ) : null}
 
                           </div>
                         ) : (
@@ -2959,6 +3100,10 @@ export default function App() {
             </div>
           )}
         </section>
+          </>
+        ) : (
+          <DeveloperSuite />
+        )}
 
       </main>
 
@@ -3032,6 +3177,159 @@ export default function App() {
           </div>
         </div>
       )}
+
+      {/* Dedicated Floating Chat History Toggle Button */}
+      <button
+        onClick={() => setIsHistoryOpen(!isHistoryOpen)}
+        className="fixed right-0 top-1/2 -translate-y-1/2 bg-[#1b1b1b] text-white hover:bg-[#292a2b] shadow-xl border border-zinc-800 rounded-l-xl p-3 z-40 transition-all duration-200 flex flex-col items-center gap-2 group active:scale-95 cursor-pointer"
+        title="Open Chat History Panel"
+        id="toggle-chat-history-sidebar"
+      >
+        <MessageSquare className="w-5 h-5 text-[#89bf04] group-hover:scale-110 transition-transform" />
+        <span className="[writing-mode:vertical-lr] text-[10px] uppercase font-mono font-bold tracking-widest text-[#89bf04] group-hover:text-white transition-colors">
+          Chat History
+        </span>
+      </button>
+
+      {/* Side Panel Drawer Overlay */}
+      {isHistoryOpen && (
+        <div 
+          className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 transition-opacity animate-fade-in"
+          onClick={() => setIsHistoryOpen(false)}
+        />
+      )}
+
+      {/* Side Panel Drawer Sidebar */}
+      <div className={cn(
+        "fixed right-0 top-0 bottom-0 w-80 md:w-96 bg-[#1b1b1b] text-white shadow-2xl z-55 transition-transform duration-300 transform border-l border-zinc-800 flex flex-col font-sans",
+        isHistoryOpen ? "translate-x-0" : "translate-x-full"
+      )}>
+        {/* Header */}
+        <div className="p-4 border-b border-zinc-800 flex items-center justify-between bg-zinc-950">
+          <div className="flex items-center gap-2">
+            <History className="w-5 h-5 text-[#89bf04]" />
+            <span className="font-bold tracking-tight text-sm">Chat Thread History</span>
+          </div>
+          <button 
+            onClick={() => setIsHistoryOpen(false)}
+            className="p-1 rounded-md text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors cursor-pointer"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Actions */}
+        <div className="p-3 border-b border-zinc-800 bg-zinc-900/40">
+          <button
+            onClick={() => {
+              setActiveThreadId(null);
+              setChatInput("Kamusta ka companion? Kwentuhan mo naman ako tungkol sa Belgian history o kaya eburon AI.");
+              setChatResponse(null);
+              setChatExpanded(true);
+              setChatTryItOut(true);
+              setIsHistoryOpen(false); // Close sidebar and focus
+              const el = document.getElementById('chat-completion-section');
+              if (el) el.scrollIntoView({ behavior: 'smooth' });
+            }}
+            className="w-full flex items-center justify-center gap-2 bg-[#89bf04] hover:bg-[#7aa903] text-white py-2 px-3 rounded-md font-bold text-xs uppercase tracking-wider transition-all shadow-md active:scale-95 cursor-pointer"
+            id="new-thread-button-sidebar"
+          >
+            <Plus className="w-4 h-4 text-white" />
+            <span>New Chat Thread</span>
+          </button>
+        </div>
+
+        {/* Thread List */}
+        <div className="flex-1 overflow-y-auto p-3 space-y-2 bg-zinc-900 bg-linear-to-b from-zinc-900 to-zinc-950">
+          {chatThreads.length === 0 ? (
+            <div className="h-full flex flex-col items-center justify-center text-center p-6 text-zinc-500 space-y-2">
+              <MessageSquare className="w-8 h-8 opacity-20 text-[#89bf04]" />
+              <p className="text-xs font-semibold text-zinc-400">No saved threads yet.</p>
+              <p className="text-[10px] px-4 leading-relaxed text-zinc-500">
+                Queries in the <span className="text-zinc-400 font-mono">/v1/chat/completions</span> endpoint are saved as active history threads instantly.
+              </p>
+            </div>
+          ) : (
+            chatThreads.map((thread) => {
+              const isActive = activeThreadId === thread.id;
+              return (
+                <div
+                  key={thread.id}
+                  onClick={() => {
+                    setActiveThreadId(thread.id);
+                    setChatModel(thread.model || 'pluto-1.0');
+                    setChatTemperature(thread.temperature ?? 0.7);
+                    
+                    const lastAssistantMsg = [...thread.messages].reverse().find(m => m.role === 'assistant');
+                    if (lastAssistantMsg) {
+                      setChatResponse({
+                        id: `chatcmpl-${thread.id}`,
+                        object: "chat.completion",
+                        created: Math.floor(thread.createdAt / 1000),
+                        model: thread.model || "pluto-1.0",
+                        choices: [{
+                          index: 0,
+                          message: {
+                            role: "assistant",
+                            content: lastAssistantMsg.content
+                          },
+                          finish_reason: "stop"
+                        }]
+                      });
+                    } else {
+                      setChatResponse(null);
+                    }
+                    
+                    setChatExpanded(true);
+                    setChatTryItOut(true);
+                    setIsHistoryOpen(false); // close panel so user can inspect or continue writing turns
+                    
+                    const el = document.getElementById('chat-completion-section');
+                    if (el) el.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className={cn(
+                    "p-3 rounded-lg border text-left cursor-pointer transition-all duration-200 group relative select-none",
+                    isActive 
+                      ? "bg-[#89bf04]/10 border-[#89bf04] text-white shadow-xs" 
+                      : "bg-zinc-805 border-zinc-800/60 hover:bg-zinc-800 hover:border-zinc-700 text-zinc-300"
+                  )}
+                >
+                  <div className="pr-6">
+                    <div className="font-semibold text-xs truncate text-zinc-100 group-hover:text-white transition-colors">{thread.title || "Untitled Conversation"}</div>
+                    <div className="flex items-center gap-2 mt-2 text-[9px] text-zinc-500 font-mono">
+                      <span className="bg-zinc-800 px-1 py-0.5 rounded text-zinc-400">{thread.messages.length} messages</span>
+                      <span>•</span>
+                      <span>{new Date(thread.createdAt).toLocaleDateString()}</span>
+                    </div>
+                  </div>
+                  
+                  {/* Delete button */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (confirm("Are you sure you want to delete this thread?")) {
+                        setChatThreads(prev => prev.filter(t => t.id !== thread.id));
+                        if (isActive) {
+                          setActiveThreadId(null);
+                          setChatResponse(null);
+                        }
+                      }
+                    }}
+                    className="absolute right-2 top-2.5 p-1 rounded hover:bg-zinc-800 text-zinc-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all duration-150 cursor-pointer"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="p-3 border-t border-zinc-800 bg-zinc-950 text-[9px] font-mono text-zinc-500 text-center select-none">
+          Thread state persisted under localStorage cache
+        </div>
+      </div>
 
     </div>
   );
